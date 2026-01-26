@@ -59,6 +59,7 @@ class TestRunner:
         self.target_provider = target_provider
         self.max_workers = max_workers
         self._cache = {}  # Cache for (prompt, input, system) -> output
+        self._cache_lock = threading.Lock()  # Thread-safe cache access
         self.cache_hits = 0
         self.cache_misses = 0
 
@@ -142,23 +143,24 @@ class TestRunner:
         Returns:
             Evaluation result
         """
-        # Check cache first
+        # Check cache first (thread-safe)
         cache_key = (prompt, case.input, system)
-        if cache_key in self._cache:
-            self.cache_hits += 1
-            actual_output = self._cache[cache_key]
+        with self._cache_lock:
+            if cache_key in self._cache:
+                self.cache_hits += 1
+                actual_output = self._cache[cache_key]
 
-            # Check if output matches expected
-            passed = self._check_match(actual_output, case.expected_output)
+                # Check if output matches expected
+                passed = self._check_match(actual_output, case.expected_output)
 
-            return EvalResult(
-                case=case,
-                actual_output=actual_output,
-                passed=passed,
-                error=None,
-            )
+                return EvalResult(
+                    case=case,
+                    actual_output=actual_output,
+                    passed=passed,
+                    error=None,
+                )
 
-        self.cache_misses += 1
+            self.cache_misses += 1
 
         try:
             # Generate the full prompt by combining the instruction prompt
@@ -173,8 +175,9 @@ class TestRunner:
                 max_tokens=500,
             )
 
-            # Store in cache
-            self._cache[cache_key] = actual_output
+            # Store in cache (thread-safe)
+            with self._cache_lock:
+                self._cache[cache_key] = actual_output
 
             # Check if output matches expected
             passed = self._check_match(actual_output, case.expected_output)

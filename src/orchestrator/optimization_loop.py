@@ -184,22 +184,23 @@ class OptimizationLoop:
                 candidate_pass_rate, candidate_passed, candidate_total = self.test_runner.compute_pass_rate(candidate_results)
                 print(f"    → {candidate_passed}/{candidate_total} ({candidate_pass_rate:.1%})")
 
-                # Track best candidate
-                if candidate_pass_rate > best_pass_rate:
+                # Track best candidate (use >= to allow lateral moves, matching acceptance logic)
+                if candidate_pass_rate >= best_pass_rate:
                     best_pass_rate = candidate_pass_rate
                     best_candidate = candidate_prompt
                     best_results = candidate_results
 
-            # Use the best candidate (or None if all were worse)
+            # Use the best candidate (with >=, at least one candidate will match current score)
             if best_candidate is not None:
                 candidate_prompt = best_candidate
                 candidate_results = best_results
                 new_pass_rate = best_pass_rate
             else:
-                # No candidate was better - use the first one for logging purposes
-                candidate_prompt = candidates[0]
-                candidate_results = self.test_runner.run_eval(candidate_prompt, training_cases)
-                new_pass_rate, _, _ = self.test_runner.compute_pass_rate(candidate_results)
+                # This should never happen with >= comparison, but handle gracefully
+                # No candidate matched or exceeded current - reject all
+                candidate_prompt = previous_prompt
+                candidate_results = previous_results
+                new_pass_rate = previous_pass_rate
 
             # Validate: only accept if improvement
             accepted = self.prompt_history.should_accept(new_pass_rate, previous_pass_rate, phase="training")
@@ -461,8 +462,8 @@ class OptimizationLoop:
                 candidate_test_pass_rate, test_passed, test_total = self.test_runner.compute_pass_rate(candidate_test_results)
                 print(f"    → Training: {candidate_training_pass_rate:.1%}, Test: {test_passed}/{test_total} ({candidate_test_pass_rate:.1%})")
 
-                # Track best candidate
-                if candidate_test_pass_rate > best_test_pass_rate:
+                # Track best candidate (use >= to allow lateral moves, matching acceptance logic)
+                if candidate_test_pass_rate >= best_test_pass_rate:
                     best_test_pass_rate = candidate_test_pass_rate
                     best_candidate = candidate_prompt
                     best_test_results = candidate_test_results

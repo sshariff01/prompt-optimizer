@@ -1,72 +1,32 @@
 {
   "status": "plateau_detected",
-  "final_prompt": "Analyze the customer service message provided and categorize it using exactly one of the following valid categories:\n\n- RETURN_REQUEST: Customer wants to return an item\n- TRACKING_INQUIRY: Customer asking about order status, delivery, or shipping\n- PRODUCT_INQUIRY: Customer asking questions about a product\n- BILLING_ISSUE: Customer has problems with charges or payments\n- COMPLAINT: Customer expressing dissatisfaction (not requesting specific action)\n- ORDER_MODIFICATION: Customer wants to change an existing order\n- POSITIVE_FEEDBACK: Customer expressing satisfaction or praise\n- REFUND_REQUEST: Customer specifically requesting money back\n- POLICY_QUESTION: Customer asking about store policies\n- DISCOUNT_INQUIRY: Customer asking about discounts, coupons, or promotions\n\n**Output Format:**\nOutput ONLY the category and brief description in this exact format:\nCATEGORY_NAME: Brief description\n\nDo NOT include the word \"CATEGORY:\" at the beginning. Just output the category name directly followed by a colon and the description.\n\n**Description Guidelines:**\n- Use exactly 2-3 words for descriptions\n- For RETURN_REQUEST with order number: use \"Order #XXXXX\"\n- For REFUND_REQUEST with order number and reason: use \"Order #XXXXX - reason\" where reason is ONE WORD ONLY (e.g., \"damaged\", \"defective\", \"broken\")\n- For REFUND_REQUEST with order number but no specific product issue (e.g., never arrived, not received): use ONLY \"Order #XXXXX\" without any reason\n- For REFUND_REQUEST without order number but with broken/defective item: use \"Product broken\"\n- For TRACKING_INQUIRY: always use \"Check order status\"\n- For POSITIVE_FEEDBACK: always use \"Satisfied customer\"\n- For PRODUCT_INQUIRY about colors: use \"Color availability\"\n- For PRODUCT_INQUIRY about sizes: use \"Size availability\"\n- For PRODUCT_INQUIRY about features/materials: use \"Product features\" or \"Material information\"\n- For BILLING_ISSUE with double charges: use \"Duplicate charge\"\n- For BILLING_ISSUE with wrong amount: use \"Incorrect amount\"\n- For BILLING_ISSUE with price mismatch: use \"Price discrepancy\"\n- For BILLING_ISSUE when charged but not received: use \"Unauthorized charge\"\n- For COMPLAINT about broken/defective items: use \"Product defect\"\n- For COMPLAINT about quality: use \"Poor quality\"\n- For COMPLAINT about misleading images/description: use \"Misleading description\"\n- For COMPLAINT about service: use \"Service issue\"\n- For COMPLAINT about damaged shipping: use \"Shipping damage\"\n- For ORDER_MODIFICATION address changes: use \"Shipping address change\"\n- For ORDER_MODIFICATION cancellations: use \"Order cancellation\"\n- For ORDER_MODIFICATION adding items: use \"Add items\"\n- For ORDER_MODIFICATION removing items: use \"Remove items\"\n- For POLICY_QUESTION: use the policy type only (e.g., \"Return policy\", \"Return window\", \"Price matching\", \"Warranty policy\", \"Shipping policy\")\n- For DISCOUNT_INQUIRY about codes: use \"Promo code request\"\n- For DISCOUNT_INQUIRY about promotions: use \"Current promotions\"\n- For DISCOUNT_INQUIRY about coupons: use \"Coupon availability\"\n- For DISCOUNT_INQUIRY about student discounts: use \"Student discount\"\n- For DISCOUNT_INQUIRY about new customer deals: use \"New customer discount\"\n\n**Examples:**\nInput: I want to return my order #12345 because it doesn't fit\nOutput: RETURN_REQUEST: Order #12345\n\nInput: Still haven't received my order. When will it arrive?\nOutput: TRACKING_INQUIRY: Check order status\n\nInput: Thanks for the quick delivery! Everything looks great.\nOutput: POSITIVE_FEEDBACK: Satisfied customer\n\nInput: I need a refund for order #98765. The item was damaged.\nOutput: REFUND_REQUEST: Order #98765 - damaged\n\nInput: Please refund my money. Order #33221 never arrived\nOutput: REFUND_REQUEST: Order #33221\n\nInput: Item is defective. Need refund for order #77665\nOutput: REFUND_REQUEST: Order #77665 - defective\n\nInput: Want my money back. This is broken\nOutput: REFUND_REQUEST: Product broken\n\nAnalyze the following customer message:",
+  "final_prompt": "Analyze the customer service message and categorize it with the appropriate request type and key details.\n\n**Valid Categories:**\n- RETURN_REQUEST: Customer wants to return an item\n- TRACKING_INQUIRY: Customer asking about order status or delivery\n- PRODUCT_INQUIRY: Questions about product features, availability, or specifications\n- BILLING_ISSUE: Problems with charges, payments, or invoices\n- COMPLAINT: Expression of dissatisfaction or negative experience\n- ORDER_MODIFICATION: Request to change, cancel, or update an existing order\n- POSITIVE_FEEDBACK: Compliments, praise, or positive comments\n- REFUND_REQUEST: Customer specifically requesting money back\n- POLICY_QUESTION: Questions about store policies, warranties, or terms\n- DISCOUNT_INQUIRY: Questions about promotions, coupons, or price reductions\n\n**Output Format:**\nOutput ONLY: CATEGORY_NAME: Brief description\nDo NOT include the word \"CATEGORY:\" at the start. Just output the category name directly followed by colon and description.\n\n**CRITICAL RULES - Follow these exactly:**\n\n1. **For RETURN_REQUEST:** \n   - If order number present: \"Order #XXXXX\" (ONLY the order number, do NOT add reason like \"doesn't fit\" or \"wrong size\")\n   - If no order number: \"Return item\"\n\n2. **For TRACKING_INQUIRY:** Always use \"Check order status\" as the description.\n\n3. **For PRODUCT_INQUIRY:** Use these exact phrases:\n   - Color questions \u2192 \"Color availability\"\n   - Size questions \u2192 \"Size availability\"\n   - Feature/specification questions \u2192 \"Product features\"\n   - Material questions \u2192 \"Material information\"\n\n4. **For BILLING_ISSUE:** Use these exact phrases:\n   - Double/duplicate charges \u2192 \"Duplicate charge\"\n   - Charged but not received \u2192 \"Unauthorized charge\"\n   - Price mismatch \u2192 \"Price discrepancy\"\n   - Wrong amount charged \u2192 \"Incorrect amount\"\n\n5. **For COMPLAINT:** Use these exact phrases:\n   - Broken/defective product \u2192 \"Product defect\"\n   - Quality issues \u2192 \"Poor quality\"\n   - Doesn't match description/photos \u2192 \"Misleading description\"\n   - Bad customer service \u2192 \"Service issue\"\n   - Damaged in shipping \u2192 \"Shipping damage\"\n\n6. **For ORDER_MODIFICATION:** Use these exact phrases:\n   - Address change \u2192 \"Shipping address change\"\n   - Cancel order \u2192 \"Order cancellation\"\n   - Add items \u2192 \"Add items\"\n   - Remove items \u2192 \"Remove items\"\n\n7. **For POSITIVE_FEEDBACK:** Always use \"Satisfied customer\" as the description.\n\n8. **For REFUND_REQUEST:** \n   - If order number present WITH a reason (damaged, defective, broken, etc.): \"Order #XXXXX - reason\" (include brief reason after dash)\n   - If order number present WITHOUT specific reason: \"Order #XXXXX\"\n   - If no order number: Brief reason like \"Product broken\"\n   - Examples: \"Order #98765 - damaged item\", \"Order #77665 - defective\"\n\n9. **For POLICY_QUESTION:** Use these exact phrases:\n   - Return policy \u2192 \"Return policy\"\n   - Return timeframe \u2192 \"Return window\"\n   - Price matching \u2192 \"Price matching\"\n   - Warranty \u2192 \"Warranty policy\"\n   - Shipping questions \u2192 \"Shipping policy\"\n\n10. **For DISCOUNT_INQUIRY:** Use these exact phrases:\n    - Discount/promo codes \u2192 \"Promo code request\"\n    - Current sales/promotions \u2192 \"Current promotions\"\n    - Coupons \u2192 \"Coupon availability\"\n    - Student discounts \u2192 \"Student discount\"\n    - New/first-time customer \u2192 \"New customer discount\"\n\n**Examples:**\n- RETURN_REQUEST: Order #12345\n- TRACKING_INQUIRY: Check order status\n- PRODUCT_INQUIRY: Size availability\n- BILLING_ISSUE: Duplicate charge\n- COMPLAINT: Product defect\n- ORDER_MODIFICATION: Shipping address change\n- POSITIVE_FEEDBACK: Satisfied customer\n- REFUND_REQUEST: Order #98765 - damaged item\n- REFUND_REQUEST: Order #77665 - defective\n- POLICY_QUESTION: Return policy\n- DISCOUNT_INQUIRY: Promo code request\n\nAnalyze the following customer message:",
   "iterations": [
     {
       "iteration": 0,
-      "prompt": "Analyze the customer service message provided and categorize it using exactly one of the following valid categories:\n\n- RETURN_REQUEST: Customer wants to return an item\n- TRACKING_INQUIRY: Customer asking about order status, delivery, or shipping\n- PRODUCT_INQUIRY: Customer asking questions about a product\n- BILLING_ISSUE: Customer has problems with charges or payments\n- COMPLAINT: Customer expressing dissatisfaction (not requesting specific action)\n- ORDER_MODIFICATION: Customer wants to change an existing order\n- POSITIVE_FEEDBACK: Customer expressing satisfaction or praise\n- REFUND_REQUEST: Customer specifically requesting money back\n- POLICY_QUESTION: Customer asking about store policies\n- DISCOUNT_INQUIRY: Customer asking about discounts, coupons, or promotions\n\n**Output Format:**\nCATEGORY: Brief description\n\n**Guidelines:**\n- Extract order numbers when mentioned (format as \"Order #XXXXX\")\n- If no specific order number is provided, summarize the key detail or action needed\n- Keep the description concise (2-5 words)\n- Choose the most specific category that matches the primary intent\n- If a message could fit multiple categories, prioritize the main action requested\n- For tracking/delivery questions without order numbers, use \"Check order status\"\n\nAnalyze the following customer message:",
-      "training_pass_rate": 0.04,
+      "prompt": "Analyze the customer service message and categorize it with the appropriate request type and key details.\n\n**Valid Categories:**\n- RETURN_REQUEST: Customer wants to return an item\n- TRACKING_INQUIRY: Customer asking about order status or delivery\n- PRODUCT_INQUIRY: Questions about product features, availability, or specifications\n- BILLING_ISSUE: Problems with charges, payments, or invoices\n- COMPLAINT: Expression of dissatisfaction or negative experience\n- ORDER_MODIFICATION: Request to change, cancel, or update an existing order\n- POSITIVE_FEEDBACK: Compliments, praise, or positive comments\n- REFUND_REQUEST: Customer specifically requesting money back\n- POLICY_QUESTION: Questions about store policies, warranties, or terms\n- DISCOUNT_INQUIRY: Questions about promotions, coupons, or price reductions\n\n**Output Format:**\nCATEGORY: Brief description\n\n**Guidelines:**\n- Extract order numbers when present (format as \"Order #XXXXX\")\n- If no specific order number is mentioned, provide a brief summary of the request\n- Choose the single most relevant category based on the primary intent\n- For ambiguous messages, prioritize the actionable request over general sentiment\n- Keep the description concise (under 10 words)\n\n**Examples of output format:**\n- RETURN_REQUEST: Order #12345\n- TRACKING_INQUIRY: Check order status\n- BILLING_ISSUE: Double charged for order #99999\n\nAnalyze the following customer message:",
+      "training_pass_rate": 0.14,
       "test_pass_rate": null,
       "feedback": null,
-      "optimizer_tokens_used": 844
+      "optimizer_tokens_used": 871
     },
     {
       "iteration": 1,
-      "prompt": "Analyze the customer service message provided and categorize it using exactly one of the following valid categories:\n\n- RETURN_REQUEST: Customer wants to return an item\n- TRACKING_INQUIRY: Customer asking about order status, delivery, or shipping\n- PRODUCT_INQUIRY: Customer asking questions about a product\n- BILLING_ISSUE: Customer has problems with charges or payments\n- COMPLAINT: Customer expressing dissatisfaction (not requesting specific action)\n- ORDER_MODIFICATION: Customer wants to change an existing order\n- POSITIVE_FEEDBACK: Customer expressing satisfaction or praise\n- REFUND_REQUEST: Customer specifically requesting money back\n- POLICY_QUESTION: Customer asking about store policies\n- DISCOUNT_INQUIRY: Customer asking about discounts, coupons, or promotions\n\n**Output Format:**\nOutput ONLY the category and brief description in this exact format:\nCATEGORY_NAME: Brief description\n\nDo NOT include the word \"CATEGORY:\" at the beginning. Just output the category name directly followed by a colon and the description.\n\n**Description Guidelines:**\n- Use exactly 2-3 words for descriptions\n- For RETURN_REQUEST with order number: use \"Order #XXXXX\"\n- For REFUND_REQUEST with order number and reason: use \"Order #XXXXX - reason\" (e.g., \"Order #98765 - damaged item\")\n- For REFUND_REQUEST with order number only: use \"Order #XXXXX\"\n- For TRACKING_INQUIRY: always use \"Check order status\"\n- For POSITIVE_FEEDBACK: always use \"Satisfied customer\"\n- For PRODUCT_INQUIRY about colors: use \"Color availability\"\n- For PRODUCT_INQUIRY about sizes: use \"Size availability\"\n- For PRODUCT_INQUIRY about features/materials: use \"Product features\" or \"Material information\"\n- For BILLING_ISSUE with double charges: use \"Duplicate charge\"\n- For BILLING_ISSUE with wrong amount: use \"Incorrect amount\"\n- For BILLING_ISSUE with price mismatch: use \"Price discrepancy\"\n- For BILLING_ISSUE when charged but not received: use \"Unauthorized charge\"\n- For COMPLAINT about broken/defective items: use \"Product defect\"\n- For COMPLAINT about quality: use \"Poor quality\"\n- For COMPLAINT about misleading images/description: use \"Misleading description\"\n- For COMPLAINT about service: use \"Service issue\"\n- For COMPLAINT about damaged shipping: use \"Shipping damage\"\n- For ORDER_MODIFICATION address changes: use \"Shipping address change\"\n- For ORDER_MODIFICATION cancellations: use \"Order cancellation\"\n- For ORDER_MODIFICATION adding items: use \"Add items\"\n- For ORDER_MODIFICATION removing items: use \"Remove items\"\n- For POLICY_QUESTION: use the policy type only (e.g., \"Return policy\", \"Return window\", \"Price matching\", \"Warranty policy\", \"Shipping policy\")\n- For DISCOUNT_INQUIRY about codes: use \"Promo code request\"\n- For DISCOUNT_INQUIRY about promotions: use \"Current promotions\"\n- For DISCOUNT_INQUIRY about coupons: use \"Coupon availability\"\n- For DISCOUNT_INQUIRY about student discounts: use \"Student discount\"\n- For DISCOUNT_INQUIRY about new customer deals: use \"New customer discount\"\n\n**Examples:**\nInput: I want to return my order #12345 because it doesn't fit\nOutput: RETURN_REQUEST: Order #12345\n\nInput: Still haven't received my order. When will it arrive?\nOutput: TRACKING_INQUIRY: Check order status\n\nInput: Thanks for the quick delivery! Everything looks great.\nOutput: POSITIVE_FEEDBACK: Satisfied customer\n\nInput: I need a refund for order #98765. The item was damaged.\nOutput: REFUND_REQUEST: Order #98765 - damaged item\n\nAnalyze the following customer message:",
-      "training_pass_rate": 0.94,
+      "prompt": "Analyze the customer service message and categorize it with the appropriate request type and key details.\n\n**Valid Categories:**\n- RETURN_REQUEST: Customer wants to return an item\n- TRACKING_INQUIRY: Customer asking about order status or delivery\n- PRODUCT_INQUIRY: Questions about product features, availability, or specifications\n- BILLING_ISSUE: Problems with charges, payments, or invoices\n- COMPLAINT: Expression of dissatisfaction or negative experience\n- ORDER_MODIFICATION: Request to change, cancel, or update an existing order\n- POSITIVE_FEEDBACK: Compliments, praise, or positive comments\n- REFUND_REQUEST: Customer specifically requesting money back\n- POLICY_QUESTION: Questions about store policies, warranties, or terms\n- DISCOUNT_INQUIRY: Questions about promotions, coupons, or price reductions\n\n**Output Format:**\nCATEGORY: Brief description\n\n**CRITICAL RULES - Follow these exactly:**\n\n1. **For TRACKING_INQUIRY:** Always use \"Check order status\" as the description, regardless of specific details mentioned.\n\n2. **For PRODUCT_INQUIRY:** Use these exact phrases:\n   - Color questions \u2192 \"Color availability\"\n   - Size questions \u2192 \"Size availability\"\n   - Feature/specification questions \u2192 \"Product features\"\n   - Material questions \u2192 \"Material information\"\n\n3. **For BILLING_ISSUE:** Use these exact phrases:\n   - Double/duplicate charges \u2192 \"Duplicate charge\"\n   - Charged but not received \u2192 \"Unauthorized charge\"\n   - Price mismatch \u2192 \"Price discrepancy\"\n   - Wrong amount charged \u2192 \"Incorrect amount\"\n\n4. **For COMPLAINT:** Use these exact phrases:\n   - Broken/defective product \u2192 \"Product defect\"\n   - Quality issues \u2192 \"Poor quality\"\n   - Doesn't match description/photos \u2192 \"Misleading description\"\n   - Bad customer service \u2192 \"Service issue\"\n   - Damaged in shipping \u2192 \"Shipping damage\"\n\n5. **For ORDER_MODIFICATION:** Use these exact phrases (do NOT just put order number):\n   - Address change \u2192 \"Shipping address change\"\n   - Cancel order \u2192 \"Order cancellation\"\n   - Add items \u2192 \"Add items\"\n   - Remove items \u2192 \"Remove items\"\n\n6. **For POSITIVE_FEEDBACK:** Always use \"Satisfied customer\" as the description.\n\n7. **For REFUND_REQUEST:** \n   - If order number present: \"Order #XXXXX - [reason]\" (e.g., \"damaged item\", \"defective\")\n   - If no order number: \"Product broken\" or similar brief reason\n\n8. **For POLICY_QUESTION:** Use these exact phrases:\n   - Return policy \u2192 \"Return policy\"\n   - Return timeframe \u2192 \"Return window\"\n   - Price matching \u2192 \"Price matching\"\n   - Warranty \u2192 \"Warranty policy\"\n   - Shipping questions \u2192 \"Shipping policy\"\n\n9. **For DISCOUNT_INQUIRY:** Use these exact phrases:\n   - Discount/promo codes \u2192 \"Promo code request\"\n   - Current sales/promotions \u2192 \"Current promotions\"\n   - Coupons \u2192 \"Coupon availability\"\n   - Student discounts \u2192 \"Student discount\"\n   - New/first-time customer \u2192 \"New customer discount\"\n\n**Examples:**\n- TRACKING_INQUIRY: Check order status\n- PRODUCT_INQUIRY: Size availability\n- BILLING_ISSUE: Duplicate charge\n- COMPLAINT: Product defect\n- ORDER_MODIFICATION: Shipping address change\n- POSITIVE_FEEDBACK: Satisfied customer\n- REFUND_REQUEST: Order #98765 - damaged item\n- POLICY_QUESTION: Return policy\n- DISCOUNT_INQUIRY: Promo code request\n\nAnalyze the following customer message:",
+      "training_pass_rate": 0.84,
       "test_pass_rate": null,
       "feedback": {
-        "pass_rate": 0.04,
-        "passed": 2,
+        "pass_rate": 0.14,
+        "passed": 7,
         "total": 50,
         "failures": [
           {
             "case": {
-              "input": "I want to return my order #12345 because it doesn't fit",
-              "expected_output": "RETURN_REQUEST: Order #12345"
+              "input": "Where is my package? I ordered it 5 days ago.",
+              "expected_output": "TRACKING_INQUIRY: Check order status"
             },
-            "actual_output": "CATEGORY: RETURN_REQUEST: Order #12345",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-RETURN_REQUEST: Order #12345+CATEGORY: RETURN_REQUEST: Order #12345",
-            "error_category": "logic_error",
-            "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
-          },
-          {
-            "case": {
-              "input": "Can I send back order #67890? Wrong size",
-              "expected_output": "RETURN_REQUEST: Order #67890"
-            },
-            "actual_output": "CATEGORY: RETURN_REQUEST: Order #67890",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-RETURN_REQUEST: Order #67890+CATEGORY: RETURN_REQUEST: Order #67890",
-            "error_category": "logic_error",
-            "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
-          },
-          {
-            "case": {
-              "input": "Need to return item from order #24680. Doesn't match the description",
-              "expected_output": "RETURN_REQUEST: Order #24680"
-            },
-            "actual_output": "CATEGORY: RETURN_REQUEST: Order #24680",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-RETURN_REQUEST: Order #24680+CATEGORY: RETURN_REQUEST: Order #24680",
-            "error_category": "logic_error",
-            "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
-          },
-          {
-            "case": {
-              "input": "How do I return this? Order #13579",
-              "expected_output": "RETURN_REQUEST: Order #13579"
-            },
-            "actual_output": "CATEGORY: RETURN_REQUEST: Order #13579",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-RETURN_REQUEST: Order #13579+CATEGORY: RETURN_REQUEST: Order #13579",
-            "error_category": "logic_error",
-            "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
-          },
-          {
-            "case": {
-              "input": "I'd like to send this back, order number 98765",
-              "expected_output": "RETURN_REQUEST: Order #98765"
-            },
-            "actual_output": "CATEGORY: RETURN_REQUEST: Order #98765",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-RETURN_REQUEST: Order #98765+CATEGORY: RETURN_REQUEST: Order #98765",
+            "actual_output": "TRACKING_INQUIRY: Package location after 5 days",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-TRACKING_INQUIRY: Check order status+TRACKING_INQUIRY: Package location after 5 days",
             "error_category": "logic_error",
             "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
           },
@@ -75,18 +35,18 @@
               "input": "Still haven't received my order. When will it arrive?",
               "expected_output": "TRACKING_INQUIRY: Check order status"
             },
-            "actual_output": "CATEGORY: TRACKING_INQUIRY: Check order status",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-TRACKING_INQUIRY: Check order status+CATEGORY: TRACKING_INQUIRY: Check order status",
-            "error_category": "logic_error",
-            "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
+            "actual_output": "TRACKING_INQUIRY: Check order status and delivery timeline",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-TRACKING_INQUIRY: Check order status+TRACKING_INQUIRY: Check order status and delivery timeline",
+            "error_category": "too_verbose",
+            "analysis": "Output contains additional text beyond what was requested. Instructions should emphasize outputting ONLY the required information."
           },
           {
             "case": {
               "input": "Can you check on order #55443? It's been a week",
               "expected_output": "TRACKING_INQUIRY: Check order status"
             },
-            "actual_output": "TRACKING_INQUIRY: Order #55443 status",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-TRACKING_INQUIRY: Check order status+TRACKING_INQUIRY: Order #55443 status",
+            "actual_output": "TRACKING_INQUIRY: Order #55443",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-TRACKING_INQUIRY: Check order status+TRACKING_INQUIRY: Order #55443",
             "error_category": "logic_error",
             "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
           },
@@ -95,8 +55,18 @@
               "input": "Tracking shows delivered but I didn't get it",
               "expected_output": "TRACKING_INQUIRY: Check order status"
             },
-            "actual_output": "CATEGORY: TRACKING_INQUIRY: Package not received",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-TRACKING_INQUIRY: Check order status+CATEGORY: TRACKING_INQUIRY: Package not received",
+            "actual_output": "TRACKING_INQUIRY: Package shows delivered but not received",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-TRACKING_INQUIRY: Check order status+TRACKING_INQUIRY: Package shows delivered but not received",
+            "error_category": "logic_error",
+            "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
+          },
+          {
+            "case": {
+              "input": "Expected delivery was yesterday. Where is it?",
+              "expected_output": "TRACKING_INQUIRY: Check order status"
+            },
+            "actual_output": "TRACKING_INQUIRY: Overdue delivery status check",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-TRACKING_INQUIRY: Check order status+TRACKING_INQUIRY: Overdue delivery status check",
             "error_category": "logic_error",
             "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
           },
@@ -105,8 +75,8 @@
               "input": "Do you have this shirt in blue?",
               "expected_output": "PRODUCT_INQUIRY: Color availability"
             },
-            "actual_output": "CATEGORY: PRODUCT_INQUIRY: Availability in blue",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-PRODUCT_INQUIRY: Color availability+CATEGORY: PRODUCT_INQUIRY: Availability in blue",
+            "actual_output": "PRODUCT_INQUIRY: Shirt availability in blue color",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-PRODUCT_INQUIRY: Color availability+PRODUCT_INQUIRY: Shirt availability in blue color",
             "error_category": "logic_error",
             "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
           },
@@ -115,8 +85,8 @@
               "input": "What sizes do you have for this dress?",
               "expected_output": "PRODUCT_INQUIRY: Size availability"
             },
-            "actual_output": "CATEGORY: PRODUCT_INQUIRY: Available dress sizes",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-PRODUCT_INQUIRY: Size availability+CATEGORY: PRODUCT_INQUIRY: Available dress sizes",
+            "actual_output": "PRODUCT_INQUIRY: Available dress sizes",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-PRODUCT_INQUIRY: Size availability+PRODUCT_INQUIRY: Available dress sizes",
             "error_category": "logic_error",
             "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
           },
@@ -125,8 +95,8 @@
               "input": "Is this jacket waterproof?",
               "expected_output": "PRODUCT_INQUIRY: Product features"
             },
-            "actual_output": "CATEGORY: PRODUCT_INQUIRY: Waterproof feature question",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-PRODUCT_INQUIRY: Product features+CATEGORY: PRODUCT_INQUIRY: Waterproof feature question",
+            "actual_output": "PRODUCT_INQUIRY: Jacket waterproof features",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-PRODUCT_INQUIRY: Product features+PRODUCT_INQUIRY: Jacket waterproof features",
             "error_category": "logic_error",
             "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
           },
@@ -145,8 +115,8 @@
               "input": "What material is this made from?",
               "expected_output": "PRODUCT_INQUIRY: Material information"
             },
-            "actual_output": "PRODUCT_INQUIRY: Material information request",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-PRODUCT_INQUIRY: Material information+PRODUCT_INQUIRY: Material information request",
+            "actual_output": "PRODUCT_INQUIRY: Material composition question",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-PRODUCT_INQUIRY: Material information+PRODUCT_INQUIRY: Material composition question",
             "error_category": "logic_error",
             "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
           },
@@ -155,8 +125,8 @@
               "input": "I was charged twice for the same order!",
               "expected_output": "BILLING_ISSUE: Duplicate charge"
             },
-            "actual_output": "BILLING_ISSUE: Duplicate charge complaint",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-BILLING_ISSUE: Duplicate charge+BILLING_ISSUE: Duplicate charge complaint",
+            "actual_output": "BILLING_ISSUE: Double charged for same order",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-BILLING_ISSUE: Duplicate charge+BILLING_ISSUE: Double charged for same order",
             "error_category": "logic_error",
             "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
           },
@@ -165,18 +135,18 @@
               "input": "Why is my credit card showing 2 charges?",
               "expected_output": "BILLING_ISSUE: Duplicate charge"
             },
-            "actual_output": "CATEGORY: BILLING_ISSUE: Duplicate charges inquiry",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-BILLING_ISSUE: Duplicate charge+CATEGORY: BILLING_ISSUE: Duplicate charges inquiry",
-            "error_category": "too_verbose",
-            "analysis": "Output contains additional text beyond what was requested. Instructions should emphasize outputting ONLY the required information."
+            "actual_output": "BILLING_ISSUE: Double charged on credit card",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-BILLING_ISSUE: Duplicate charge+BILLING_ISSUE: Double charged on credit card",
+            "error_category": "logic_error",
+            "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
           },
           {
             "case": {
               "input": "Never received my order but was charged",
               "expected_output": "BILLING_ISSUE: Unauthorized charge"
             },
-            "actual_output": "CATEGORY: BILLING_ISSUE - Charged without delivery",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-BILLING_ISSUE: Unauthorized charge+CATEGORY: BILLING_ISSUE - Charged without delivery",
+            "actual_output": "BILLING_ISSUE: Charged but order never received",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-BILLING_ISSUE: Unauthorized charge+BILLING_ISSUE: Charged but order never received",
             "error_category": "logic_error",
             "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
           },
@@ -185,8 +155,8 @@
               "input": "The price on my receipt doesn't match what I saw online",
               "expected_output": "BILLING_ISSUE: Price discrepancy"
             },
-            "actual_output": "BILLING_ISSUE: Price discrepancy concern",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-BILLING_ISSUE: Price discrepancy+BILLING_ISSUE: Price discrepancy concern",
+            "actual_output": "BILLING_ISSUE: Receipt price doesn't match online price",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-BILLING_ISSUE: Price discrepancy+BILLING_ISSUE: Receipt price doesn't match online price",
             "error_category": "logic_error",
             "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
           },
@@ -195,8 +165,8 @@
               "input": "I was charged $150 but order total was $120",
               "expected_output": "BILLING_ISSUE: Incorrect amount"
             },
-            "actual_output": "CATEGORY: BILLING_ISSUE: Overcharged by $30",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-BILLING_ISSUE: Incorrect amount+CATEGORY: BILLING_ISSUE: Overcharged by $30",
+            "actual_output": "BILLING_ISSUE: Overcharged by $30",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-BILLING_ISSUE: Incorrect amount+BILLING_ISSUE: Overcharged by $30",
             "error_category": "logic_error",
             "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
           },
@@ -215,8 +185,8 @@
               "input": "Terrible quality. Very disappointed",
               "expected_output": "COMPLAINT: Poor quality"
             },
-            "actual_output": "COMPLAINT: Expressing disappointment with quality",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-COMPLAINT: Poor quality+COMPLAINT: Expressing disappointment with quality",
+            "actual_output": "COMPLAINT: Poor product quality, customer disappointed",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-COMPLAINT: Poor quality+COMPLAINT: Poor product quality, customer disappointed",
             "error_category": "logic_error",
             "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
           },
@@ -225,8 +195,8 @@
               "input": "This is nothing like the pictures online",
               "expected_output": "COMPLAINT: Misleading description"
             },
-            "actual_output": "COMPLAINT: Product differs from photos",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-COMPLAINT: Misleading description+COMPLAINT: Product differs from photos",
+            "actual_output": "COMPLAINT: Product doesn't match online photos",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-COMPLAINT: Misleading description+COMPLAINT: Product doesn't match online photos",
             "error_category": "logic_error",
             "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
           },
@@ -235,8 +205,8 @@
               "input": "Customer service was rude and unhelpful",
               "expected_output": "COMPLAINT: Service issue"
             },
-            "actual_output": "CATEGORY: COMPLAINT - Service dissatisfaction",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-COMPLAINT: Service issue+CATEGORY: COMPLAINT - Service dissatisfaction",
+            "actual_output": "COMPLAINT: Rude and unhelpful service experience",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-COMPLAINT: Service issue+COMPLAINT: Rude and unhelpful service experience",
             "error_category": "logic_error",
             "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
           },
@@ -255,8 +225,8 @@
               "input": "Can I change my shipping address? I haven't received it yet.",
               "expected_output": "ORDER_MODIFICATION: Shipping address change"
             },
-            "actual_output": "CATEGORY: ORDER_MODIFICATION: Change shipping address",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-ORDER_MODIFICATION: Shipping address change+CATEGORY: ORDER_MODIFICATION: Change shipping address",
+            "actual_output": "ORDER_MODIFICATION: Change shipping address",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-ORDER_MODIFICATION: Shipping address change+ORDER_MODIFICATION: Change shipping address",
             "error_category": "logic_error",
             "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
           },
@@ -265,8 +235,8 @@
               "input": "Need to update delivery address for order #55443",
               "expected_output": "ORDER_MODIFICATION: Shipping address change"
             },
-            "actual_output": "CATEGORY: ORDER_MODIFICATION: Update address Order #55443",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-ORDER_MODIFICATION: Shipping address change+CATEGORY: ORDER_MODIFICATION: Update address Order #55443",
+            "actual_output": "ORDER_MODIFICATION: Order #55443",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-ORDER_MODIFICATION: Shipping address change+ORDER_MODIFICATION: Order #55443",
             "error_category": "logic_error",
             "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
           },
@@ -275,8 +245,8 @@
               "input": "Can I cancel my order? Just placed it 10 minutes ago",
               "expected_output": "ORDER_MODIFICATION: Order cancellation"
             },
-            "actual_output": "CATEGORY: ORDER_MODIFICATION: Cancel recent order",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-ORDER_MODIFICATION: Order cancellation+CATEGORY: ORDER_MODIFICATION: Cancel recent order",
+            "actual_output": "ORDER_MODIFICATION: Cancel recently placed order",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-ORDER_MODIFICATION: Order cancellation+ORDER_MODIFICATION: Cancel recently placed order",
             "error_category": "logic_error",
             "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
           },
@@ -285,8 +255,8 @@
               "input": "Want to add another item to my order #33221",
               "expected_output": "ORDER_MODIFICATION: Add items"
             },
-            "actual_output": "CATEGORY: ORDER_MODIFICATION: Order #33221",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-ORDER_MODIFICATION: Add items+CATEGORY: ORDER_MODIFICATION: Order #33221",
+            "actual_output": "ORDER_MODIFICATION: Order #33221",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-ORDER_MODIFICATION: Add items+ORDER_MODIFICATION: Order #33221",
             "error_category": "logic_error",
             "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
           },
@@ -295,8 +265,8 @@
               "input": "Can I remove an item from my pending order?",
               "expected_output": "ORDER_MODIFICATION: Remove items"
             },
-            "actual_output": "CATEGORY: ORDER_MODIFICATION: Remove item from order",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-ORDER_MODIFICATION: Remove items+CATEGORY: ORDER_MODIFICATION: Remove item from order",
+            "actual_output": "ORDER_MODIFICATION: Remove item from pending order",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-ORDER_MODIFICATION: Remove items+ORDER_MODIFICATION: Remove item from pending order",
             "error_category": "logic_error",
             "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
           },
@@ -305,8 +275,8 @@
               "input": "Thanks for the quick delivery! Everything looks great.",
               "expected_output": "POSITIVE_FEEDBACK: Satisfied customer"
             },
-            "actual_output": "POSITIVE_FEEDBACK: Quick delivery praise",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-POSITIVE_FEEDBACK: Satisfied customer+POSITIVE_FEEDBACK: Quick delivery praise",
+            "actual_output": "POSITIVE_FEEDBACK: Quick delivery and product satisfaction",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-POSITIVE_FEEDBACK: Satisfied customer+POSITIVE_FEEDBACK: Quick delivery and product satisfaction",
             "error_category": "logic_error",
             "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
           },
@@ -315,8 +285,8 @@
               "input": "Excellent service, very happy!",
               "expected_output": "POSITIVE_FEEDBACK: Satisfied customer"
             },
-            "actual_output": "POSITIVE_FEEDBACK: Expressing satisfaction",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-POSITIVE_FEEDBACK: Satisfied customer+POSITIVE_FEEDBACK: Expressing satisfaction",
+            "actual_output": "POSITIVE_FEEDBACK: Customer expressing satisfaction with service",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-POSITIVE_FEEDBACK: Satisfied customer+POSITIVE_FEEDBACK: Customer expressing satisfaction with service",
             "error_category": "logic_error",
             "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
           },
@@ -325,8 +295,8 @@
               "input": "Product exceeded my expectations",
               "expected_output": "POSITIVE_FEEDBACK: Satisfied customer"
             },
-            "actual_output": "POSITIVE_FEEDBACK: Exceeded expectations",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-POSITIVE_FEEDBACK: Satisfied customer+POSITIVE_FEEDBACK: Exceeded expectations",
+            "actual_output": "POSITIVE_FEEDBACK: Product exceeded expectations",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-POSITIVE_FEEDBACK: Satisfied customer+POSITIVE_FEEDBACK: Product exceeded expectations",
             "error_category": "logic_error",
             "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
           },
@@ -335,8 +305,8 @@
               "input": "Fast shipping and great quality. Thank you!",
               "expected_output": "POSITIVE_FEEDBACK: Satisfied customer"
             },
-            "actual_output": "CATEGORY: POSITIVE_FEEDBACK: Fast shipping praise",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-POSITIVE_FEEDBACK: Satisfied customer+CATEGORY: POSITIVE_FEEDBACK: Fast shipping praise",
+            "actual_output": "POSITIVE_FEEDBACK: Fast shipping and great quality",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-POSITIVE_FEEDBACK: Satisfied customer+POSITIVE_FEEDBACK: Fast shipping and great quality",
             "error_category": "logic_error",
             "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
           },
@@ -345,8 +315,8 @@
               "input": "Love this! Will definitely order again",
               "expected_output": "POSITIVE_FEEDBACK: Satisfied customer"
             },
-            "actual_output": "POSITIVE_FEEDBACK: Will order again",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-POSITIVE_FEEDBACK: Satisfied customer+POSITIVE_FEEDBACK: Will order again",
+            "actual_output": "POSITIVE_FEEDBACK: Customer expressing satisfaction and loyalty",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-POSITIVE_FEEDBACK: Satisfied customer+POSITIVE_FEEDBACK: Customer expressing satisfaction and loyalty",
             "error_category": "logic_error",
             "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
           },
@@ -355,28 +325,8 @@
               "input": "I need a refund for order #98765. The item was damaged.",
               "expected_output": "REFUND_REQUEST: Order #98765 - damaged item"
             },
-            "actual_output": "CATEGORY: REFUND_REQUEST: Order #98765",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-REFUND_REQUEST: Order #98765 - damaged item+CATEGORY: REFUND_REQUEST: Order #98765",
-            "error_category": "logic_error",
-            "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
-          },
-          {
-            "case": {
-              "input": "Requesting full refund for #55443",
-              "expected_output": "REFUND_REQUEST: Order #55443"
-            },
-            "actual_output": "CATEGORY: REFUND_REQUEST: Order #55443",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-REFUND_REQUEST: Order #55443+CATEGORY: REFUND_REQUEST: Order #55443",
-            "error_category": "logic_error",
-            "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
-          },
-          {
-            "case": {
-              "input": "Please refund my money. Order #33221 never arrived",
-              "expected_output": "REFUND_REQUEST: Order #33221"
-            },
-            "actual_output": "CATEGORY: REFUND_REQUEST: Order #33221",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-REFUND_REQUEST: Order #33221+CATEGORY: REFUND_REQUEST: Order #33221",
+            "actual_output": "REFUND_REQUEST: Order #98765",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-REFUND_REQUEST: Order #98765 - damaged item+REFUND_REQUEST: Order #98765",
             "error_category": "logic_error",
             "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
           },
@@ -385,8 +335,8 @@
               "input": "Item is defective. Need refund for order #77665",
               "expected_output": "REFUND_REQUEST: Order #77665 - defective"
             },
-            "actual_output": "CATEGORY: REFUND_REQUEST: Order #77665",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-REFUND_REQUEST: Order #77665 - defective+CATEGORY: REFUND_REQUEST: Order #77665",
+            "actual_output": "REFUND_REQUEST: Order #77665",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-REFUND_REQUEST: Order #77665 - defective+REFUND_REQUEST: Order #77665",
             "error_category": "logic_error",
             "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
           },
@@ -395,8 +345,8 @@
               "input": "Want my money back. This is broken",
               "expected_output": "REFUND_REQUEST: Product broken"
             },
-            "actual_output": "REFUND_REQUEST: Money back for broken item",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-REFUND_REQUEST: Product broken+REFUND_REQUEST: Money back for broken item",
+            "actual_output": "REFUND_REQUEST: Item is broken",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-REFUND_REQUEST: Product broken+REFUND_REQUEST: Item is broken",
             "error_category": "logic_error",
             "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
           },
@@ -415,8 +365,8 @@
               "input": "How long do I have to return items?",
               "expected_output": "POLICY_QUESTION: Return window"
             },
-            "actual_output": "CATEGORY: POLICY_QUESTION: Return time limit",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-POLICY_QUESTION: Return window+CATEGORY: POLICY_QUESTION: Return time limit",
+            "actual_output": "POLICY_QUESTION: Return time limit inquiry",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-POLICY_QUESTION: Return window+POLICY_QUESTION: Return time limit inquiry",
             "error_category": "logic_error",
             "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
           },
@@ -425,8 +375,8 @@
               "input": "Do you offer price matching?",
               "expected_output": "POLICY_QUESTION: Price matching"
             },
-            "actual_output": "POLICY_QUESTION: Price matching policy",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-POLICY_QUESTION: Price matching+POLICY_QUESTION: Price matching policy",
+            "actual_output": "POLICY_QUESTION: Price matching policy inquiry",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-POLICY_QUESTION: Price matching+POLICY_QUESTION: Price matching policy inquiry",
             "error_category": "logic_error",
             "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
           },
@@ -445,8 +395,8 @@
               "input": "Do you ship internationally?",
               "expected_output": "POLICY_QUESTION: Shipping policy"
             },
-            "actual_output": "POLICY_QUESTION: International shipping policy",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-POLICY_QUESTION: Shipping policy+POLICY_QUESTION: International shipping policy",
+            "actual_output": "POLICY_QUESTION: International shipping availability",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-POLICY_QUESTION: Shipping policy+POLICY_QUESTION: International shipping availability",
             "error_category": "logic_error",
             "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
           },
@@ -455,8 +405,8 @@
               "input": "Is there a discount code I can use?",
               "expected_output": "DISCOUNT_INQUIRY: Promo code request"
             },
-            "actual_output": "CATEGORY: DISCOUNT_INQUIRY: Available discount codes",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-DISCOUNT_INQUIRY: Promo code request+CATEGORY: DISCOUNT_INQUIRY: Available discount codes",
+            "actual_output": "DISCOUNT_INQUIRY: Asking for available discount code",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-DISCOUNT_INQUIRY: Promo code request+DISCOUNT_INQUIRY: Asking for available discount code",
             "error_category": "logic_error",
             "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
           },
@@ -465,18 +415,18 @@
               "input": "Do you have any current promotions?",
               "expected_output": "DISCOUNT_INQUIRY: Current promotions"
             },
-            "actual_output": "CATEGORY: DISCOUNT_INQUIRY: Current promotions available",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-DISCOUNT_INQUIRY: Current promotions+CATEGORY: DISCOUNT_INQUIRY: Current promotions available",
-            "error_category": "too_verbose",
-            "analysis": "Output contains additional text beyond what was requested. Instructions should emphasize outputting ONLY the required information."
+            "actual_output": "DISCOUNT_INQUIRY: Current promotions availability",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-DISCOUNT_INQUIRY: Current promotions+DISCOUNT_INQUIRY: Current promotions availability",
+            "error_category": "logic_error",
+            "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
           },
           {
             "case": {
               "input": "Are there any coupons available?",
               "expected_output": "DISCOUNT_INQUIRY: Coupon availability"
             },
-            "actual_output": "CATEGORY: DISCOUNT_INQUIRY: Available coupons",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-DISCOUNT_INQUIRY: Coupon availability+CATEGORY: DISCOUNT_INQUIRY: Available coupons",
+            "actual_output": "DISCOUNT_INQUIRY: Available coupons",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-DISCOUNT_INQUIRY: Coupon availability+DISCOUNT_INQUIRY: Available coupons",
             "error_category": "logic_error",
             "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
           },
@@ -485,33 +435,161 @@
               "input": "Do you offer student discounts?",
               "expected_output": "DISCOUNT_INQUIRY: Student discount"
             },
-            "actual_output": "CATEGORY: DISCOUNT_INQUIRY: Student discount availability",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-DISCOUNT_INQUIRY: Student discount+CATEGORY: DISCOUNT_INQUIRY: Student discount availability",
-            "error_category": "too_verbose",
-            "analysis": "Output contains additional text beyond what was requested. Instructions should emphasize outputting ONLY the required information."
+            "actual_output": "DISCOUNT_INQUIRY: Student discount availability",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-DISCOUNT_INQUIRY: Student discount+DISCOUNT_INQUIRY: Student discount availability",
+            "error_category": "logic_error",
+            "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
           },
           {
             "case": {
               "input": "Any deals for first-time customers?",
               "expected_output": "DISCOUNT_INQUIRY: New customer discount"
             },
-            "actual_output": "DISCOUNT_INQUIRY: First-time customer deals",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-DISCOUNT_INQUIRY: New customer discount+DISCOUNT_INQUIRY: First-time customer deals",
+            "actual_output": "DISCOUNT_INQUIRY: First-time customer promotions",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-DISCOUNT_INQUIRY: New customer discount+DISCOUNT_INQUIRY: First-time customer promotions",
             "error_category": "logic_error",
             "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
           }
         ]
       },
-      "optimizer_tokens_used": 21902
+      "optimizer_tokens_used": 20104
     },
     {
       "iteration": 2,
-      "prompt": "Analyze the customer service message provided and categorize it using exactly one of the following valid categories:\n\n- RETURN_REQUEST: Customer wants to return an item\n- TRACKING_INQUIRY: Customer asking about order status, delivery, or shipping\n- PRODUCT_INQUIRY: Customer asking questions about a product\n- BILLING_ISSUE: Customer has problems with charges or payments\n- COMPLAINT: Customer expressing dissatisfaction (not requesting specific action)\n- ORDER_MODIFICATION: Customer wants to change an existing order\n- POSITIVE_FEEDBACK: Customer expressing satisfaction or praise\n- REFUND_REQUEST: Customer specifically requesting money back\n- POLICY_QUESTION: Customer asking about store policies\n- DISCOUNT_INQUIRY: Customer asking about discounts, coupons, or promotions\n\n**Output Format:**\nOutput ONLY the category and brief description in this exact format:\nCATEGORY_NAME: Brief description\n\nDo NOT include the word \"CATEGORY:\" at the beginning. Just output the category name directly followed by a colon and the description.\n\n**Description Guidelines:**\n- Use exactly 2-3 words for descriptions\n- For RETURN_REQUEST with order number: use \"Order #XXXXX\"\n- For REFUND_REQUEST with order number and reason: use \"Order #XXXXX - reason\" where reason is ONE WORD ONLY (e.g., \"damaged\", \"defective\", \"broken\")\n- For REFUND_REQUEST with order number but no specific product issue (e.g., never arrived, not received): use ONLY \"Order #XXXXX\" without any reason\n- For REFUND_REQUEST without order number but with broken/defective item: use \"Product broken\"\n- For TRACKING_INQUIRY: always use \"Check order status\"\n- For POSITIVE_FEEDBACK: always use \"Satisfied customer\"\n- For PRODUCT_INQUIRY about colors: use \"Color availability\"\n- For PRODUCT_INQUIRY about sizes: use \"Size availability\"\n- For PRODUCT_INQUIRY about features/materials: use \"Product features\" or \"Material information\"\n- For BILLING_ISSUE with double charges: use \"Duplicate charge\"\n- For BILLING_ISSUE with wrong amount: use \"Incorrect amount\"\n- For BILLING_ISSUE with price mismatch: use \"Price discrepancy\"\n- For BILLING_ISSUE when charged but not received: use \"Unauthorized charge\"\n- For COMPLAINT about broken/defective items: use \"Product defect\"\n- For COMPLAINT about quality: use \"Poor quality\"\n- For COMPLAINT about misleading images/description: use \"Misleading description\"\n- For COMPLAINT about service: use \"Service issue\"\n- For COMPLAINT about damaged shipping: use \"Shipping damage\"\n- For ORDER_MODIFICATION address changes: use \"Shipping address change\"\n- For ORDER_MODIFICATION cancellations: use \"Order cancellation\"\n- For ORDER_MODIFICATION adding items: use \"Add items\"\n- For ORDER_MODIFICATION removing items: use \"Remove items\"\n- For POLICY_QUESTION: use the policy type only (e.g., \"Return policy\", \"Return window\", \"Price matching\", \"Warranty policy\", \"Shipping policy\")\n- For DISCOUNT_INQUIRY about codes: use \"Promo code request\"\n- For DISCOUNT_INQUIRY about promotions: use \"Current promotions\"\n- For DISCOUNT_INQUIRY about coupons: use \"Coupon availability\"\n- For DISCOUNT_INQUIRY about student discounts: use \"Student discount\"\n- For DISCOUNT_INQUIRY about new customer deals: use \"New customer discount\"\n\n**Examples:**\nInput: I want to return my order #12345 because it doesn't fit\nOutput: RETURN_REQUEST: Order #12345\n\nInput: Still haven't received my order. When will it arrive?\nOutput: TRACKING_INQUIRY: Check order status\n\nInput: Thanks for the quick delivery! Everything looks great.\nOutput: POSITIVE_FEEDBACK: Satisfied customer\n\nInput: I need a refund for order #98765. The item was damaged.\nOutput: REFUND_REQUEST: Order #98765 - damaged\n\nInput: Please refund my money. Order #33221 never arrived\nOutput: REFUND_REQUEST: Order #33221\n\nInput: Item is defective. Need refund for order #77665\nOutput: REFUND_REQUEST: Order #77665 - defective\n\nInput: Want my money back. This is broken\nOutput: REFUND_REQUEST: Product broken\n\nAnalyze the following customer message:",
+      "prompt": "Analyze the customer service message and categorize it with the appropriate request type and key details.\n\n**Valid Categories:**\n- RETURN_REQUEST: Customer wants to return an item\n- TRACKING_INQUIRY: Customer asking about order status or delivery\n- PRODUCT_INQUIRY: Questions about product features, availability, or specifications\n- BILLING_ISSUE: Problems with charges, payments, or invoices\n- COMPLAINT: Expression of dissatisfaction or negative experience\n- ORDER_MODIFICATION: Request to change, cancel, or update an existing order\n- POSITIVE_FEEDBACK: Compliments, praise, or positive comments\n- REFUND_REQUEST: Customer specifically requesting money back\n- POLICY_QUESTION: Questions about store policies, warranties, or terms\n- DISCOUNT_INQUIRY: Questions about promotions, coupons, or price reductions\n\n**Output Format:**\nOutput ONLY: CATEGORY_NAME: Brief description\nDo NOT include the word \"CATEGORY:\" at the start. Just output the category name directly followed by colon and description.\n\n**CRITICAL RULES - Follow these exactly:**\n\n1. **For RETURN_REQUEST:** \n   - If order number present: \"Order #XXXXX\" (ONLY the order number, do NOT add reason like \"doesn't fit\" or \"wrong size\")\n   - If no order number: \"Return item\"\n\n2. **For TRACKING_INQUIRY:** Always use \"Check order status\" as the description.\n\n3. **For PRODUCT_INQUIRY:** Use these exact phrases:\n   - Color questions \u2192 \"Color availability\"\n   - Size questions \u2192 \"Size availability\"\n   - Feature/specification questions \u2192 \"Product features\"\n   - Material questions \u2192 \"Material information\"\n\n4. **For BILLING_ISSUE:** Use these exact phrases:\n   - Double/duplicate charges \u2192 \"Duplicate charge\"\n   - Charged but not received \u2192 \"Unauthorized charge\"\n   - Price mismatch \u2192 \"Price discrepancy\"\n   - Wrong amount charged \u2192 \"Incorrect amount\"\n\n5. **For COMPLAINT:** Use these exact phrases:\n   - Broken/defective product \u2192 \"Product defect\"\n   - Quality issues \u2192 \"Poor quality\"\n   - Doesn't match description/photos \u2192 \"Misleading description\"\n   - Bad customer service \u2192 \"Service issue\"\n   - Damaged in shipping \u2192 \"Shipping damage\"\n\n6. **For ORDER_MODIFICATION:** Use these exact phrases:\n   - Address change \u2192 \"Shipping address change\"\n   - Cancel order \u2192 \"Order cancellation\"\n   - Add items \u2192 \"Add items\"\n   - Remove items \u2192 \"Remove items\"\n\n7. **For POSITIVE_FEEDBACK:** Always use \"Satisfied customer\" as the description.\n\n8. **For REFUND_REQUEST:** \n   - If order number present: \"Order #XXXXX\" (ONLY the order number, do NOT add reason like \"never arrived\" or \"full refund\")\n   - If no order number: \"Product broken\" or similar brief reason\n\n9. **For POLICY_QUESTION:** Use these exact phrases:\n   - Return policy \u2192 \"Return policy\"\n   - Return timeframe \u2192 \"Return window\"\n   - Price matching \u2192 \"Price matching\"\n   - Warranty \u2192 \"Warranty policy\"\n   - Shipping questions \u2192 \"Shipping policy\"\n\n10. **For DISCOUNT_INQUIRY:** Use these exact phrases:\n    - Discount/promo codes \u2192 \"Promo code request\"\n    - Current sales/promotions \u2192 \"Current promotions\"\n    - Coupons \u2192 \"Coupon availability\"\n    - Student discounts \u2192 \"Student discount\"\n    - New/first-time customer \u2192 \"New customer discount\"\n\n**Examples:**\n- RETURN_REQUEST: Order #12345\n- TRACKING_INQUIRY: Check order status\n- PRODUCT_INQUIRY: Size availability\n- BILLING_ISSUE: Duplicate charge\n- COMPLAINT: Product defect\n- ORDER_MODIFICATION: Shipping address change\n- POSITIVE_FEEDBACK: Satisfied customer\n- REFUND_REQUEST: Order #55443\n- POLICY_QUESTION: Return policy\n- DISCOUNT_INQUIRY: Promo code request\n\nAnalyze the following customer message:",
+      "training_pass_rate": 0.96,
+      "test_pass_rate": null,
+      "feedback": {
+        "pass_rate": 0.84,
+        "passed": 42,
+        "total": 50,
+        "failures": [
+          {
+            "case": {
+              "input": "I want to return my order #12345 because it doesn't fit",
+              "expected_output": "RETURN_REQUEST: Order #12345"
+            },
+            "actual_output": "RETURN_REQUEST: Order #12345 - doesn't fit",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-RETURN_REQUEST: Order #12345+RETURN_REQUEST: Order #12345 - doesn't fit",
+            "error_category": "logic_error",
+            "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
+          },
+          {
+            "case": {
+              "input": "Can I send back order #67890? Wrong size",
+              "expected_output": "RETURN_REQUEST: Order #67890"
+            },
+            "actual_output": "RETURN_REQUEST: Order #67890 - wrong size",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-RETURN_REQUEST: Order #67890+RETURN_REQUEST: Order #67890 - wrong size",
+            "error_category": "logic_error",
+            "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
+          },
+          {
+            "case": {
+              "input": "Need to return item from order #24680. Doesn't match the description",
+              "expected_output": "RETURN_REQUEST: Order #24680"
+            },
+            "actual_output": "RETURN_REQUEST: Order #24680 - doesn't match description",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-RETURN_REQUEST: Order #24680+RETURN_REQUEST: Order #24680 - doesn't match description",
+            "error_category": "too_verbose",
+            "analysis": "Output contains additional text beyond what was requested. Instructions should emphasize outputting ONLY the required information."
+          },
+          {
+            "case": {
+              "input": "Can I change my shipping address? I haven't received it yet.",
+              "expected_output": "ORDER_MODIFICATION: Shipping address change"
+            },
+            "actual_output": "CATEGORY: ORDER_MODIFICATION: Shipping address change",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-ORDER_MODIFICATION: Shipping address change+CATEGORY: ORDER_MODIFICATION: Shipping address change",
+            "error_category": "logic_error",
+            "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
+          },
+          {
+            "case": {
+              "input": "Need to update delivery address for order #55443",
+              "expected_output": "ORDER_MODIFICATION: Shipping address change"
+            },
+            "actual_output": "CATEGORY: ORDER_MODIFICATION: Shipping address change",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-ORDER_MODIFICATION: Shipping address change+CATEGORY: ORDER_MODIFICATION: Shipping address change",
+            "error_category": "logic_error",
+            "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
+          },
+          {
+            "case": {
+              "input": "Want to add another item to my order #33221",
+              "expected_output": "ORDER_MODIFICATION: Add items"
+            },
+            "actual_output": "CATEGORY: ORDER_MODIFICATION\nDESCRIPTION: Add items",
+            "diff": "--- expected+++ actual@@ -1 +1,2 @@-ORDER_MODIFICATION: Add items+CATEGORY: ORDER_MODIFICATION\n+DESCRIPTION: Add items",
+            "error_category": "logic_error",
+            "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
+          },
+          {
+            "case": {
+              "input": "Requesting full refund for #55443",
+              "expected_output": "REFUND_REQUEST: Order #55443"
+            },
+            "actual_output": "REFUND_REQUEST: Order #55443 - full refund",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-REFUND_REQUEST: Order #55443+REFUND_REQUEST: Order #55443 - full refund",
+            "error_category": "logic_error",
+            "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
+          },
+          {
+            "case": {
+              "input": "Please refund my money. Order #33221 never arrived",
+              "expected_output": "REFUND_REQUEST: Order #33221"
+            },
+            "actual_output": "REFUND_REQUEST: Order #33221 - never arrived",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-REFUND_REQUEST: Order #33221+REFUND_REQUEST: Order #33221 - never arrived",
+            "error_category": "too_verbose",
+            "analysis": "Output contains additional text beyond what was requested. Instructions should emphasize outputting ONLY the required information."
+          }
+        ]
+      },
+      "optimizer_tokens_used": 29049
+    },
+    {
+      "iteration": 3,
+      "prompt": "Analyze the customer service message and categorize it with the appropriate request type and key details.\n\n**Valid Categories:**\n- RETURN_REQUEST: Customer wants to return an item\n- TRACKING_INQUIRY: Customer asking about order status or delivery\n- PRODUCT_INQUIRY: Questions about product features, availability, or specifications\n- BILLING_ISSUE: Problems with charges, payments, or invoices\n- COMPLAINT: Expression of dissatisfaction or negative experience\n- ORDER_MODIFICATION: Request to change, cancel, or update an existing order\n- POSITIVE_FEEDBACK: Compliments, praise, or positive comments\n- REFUND_REQUEST: Customer specifically requesting money back\n- POLICY_QUESTION: Questions about store policies, warranties, or terms\n- DISCOUNT_INQUIRY: Questions about promotions, coupons, or price reductions\n\n**Output Format:**\nOutput ONLY: CATEGORY_NAME: Brief description\nDo NOT include the word \"CATEGORY:\" at the start. Just output the category name directly followed by colon and description.\n\n**CRITICAL RULES - Follow these exactly:**\n\n1. **For RETURN_REQUEST:** \n   - If order number present: \"Order #XXXXX\" (ONLY the order number, do NOT add reason like \"doesn't fit\" or \"wrong size\")\n   - If no order number: \"Return item\"\n\n2. **For TRACKING_INQUIRY:** Always use \"Check order status\" as the description.\n\n3. **For PRODUCT_INQUIRY:** Use these exact phrases:\n   - Color questions \u2192 \"Color availability\"\n   - Size questions \u2192 \"Size availability\"\n   - Feature/specification questions \u2192 \"Product features\"\n   - Material questions \u2192 \"Material information\"\n\n4. **For BILLING_ISSUE:** Use these exact phrases:\n   - Double/duplicate charges \u2192 \"Duplicate charge\"\n   - Charged but not received \u2192 \"Unauthorized charge\"\n   - Price mismatch \u2192 \"Price discrepancy\"\n   - Wrong amount charged \u2192 \"Incorrect amount\"\n\n5. **For COMPLAINT:** Use these exact phrases:\n   - Broken/defective product \u2192 \"Product defect\"\n   - Quality issues \u2192 \"Poor quality\"\n   - Doesn't match description/photos \u2192 \"Misleading description\"\n   - Bad customer service \u2192 \"Service issue\"\n   - Damaged in shipping \u2192 \"Shipping damage\"\n\n6. **For ORDER_MODIFICATION:** Use these exact phrases:\n   - Address change \u2192 \"Shipping address change\"\n   - Cancel order \u2192 \"Order cancellation\"\n   - Add items \u2192 \"Add items\"\n   - Remove items \u2192 \"Remove items\"\n\n7. **For POSITIVE_FEEDBACK:** Always use \"Satisfied customer\" as the description.\n\n8. **For REFUND_REQUEST:** \n   - If order number present WITH a reason (damaged, defective, broken, etc.): \"Order #XXXXX - reason\" (include brief reason after dash)\n   - If order number present WITHOUT specific reason: \"Order #XXXXX\"\n   - If no order number: Brief reason like \"Product broken\"\n   - Examples: \"Order #98765 - damaged item\", \"Order #77665 - defective\"\n\n9. **For POLICY_QUESTION:** Use these exact phrases:\n   - Return policy \u2192 \"Return policy\"\n   - Return timeframe \u2192 \"Return window\"\n   - Price matching \u2192 \"Price matching\"\n   - Warranty \u2192 \"Warranty policy\"\n   - Shipping questions \u2192 \"Shipping policy\"\n\n10. **For DISCOUNT_INQUIRY:** Use these exact phrases:\n    - Discount/promo codes \u2192 \"Promo code request\"\n    - Current sales/promotions \u2192 \"Current promotions\"\n    - Coupons \u2192 \"Coupon availability\"\n    - Student discounts \u2192 \"Student discount\"\n    - New/first-time customer \u2192 \"New customer discount\"\n\n**Examples:**\n- RETURN_REQUEST: Order #12345\n- TRACKING_INQUIRY: Check order status\n- PRODUCT_INQUIRY: Size availability\n- BILLING_ISSUE: Duplicate charge\n- COMPLAINT: Product defect\n- ORDER_MODIFICATION: Shipping address change\n- POSITIVE_FEEDBACK: Satisfied customer\n- REFUND_REQUEST: Order #98765 - damaged item\n- REFUND_REQUEST: Order #77665 - defective\n- POLICY_QUESTION: Return policy\n- DISCOUNT_INQUIRY: Promo code request\n\nAnalyze the following customer message:",
       "training_pass_rate": 0.98,
       "test_pass_rate": null,
       "feedback": {
-        "pass_rate": 0.94,
-        "passed": 47,
+        "pass_rate": 0.96,
+        "passed": 48,
+        "total": 50,
+        "failures": [
+          {
+            "case": {
+              "input": "I need a refund for order #98765. The item was damaged.",
+              "expected_output": "REFUND_REQUEST: Order #98765 - damaged item"
+            },
+            "actual_output": "REFUND_REQUEST: Order #98765",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-REFUND_REQUEST: Order #98765 - damaged item+REFUND_REQUEST: Order #98765",
+            "error_category": "logic_error",
+            "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
+          },
+          {
+            "case": {
+              "input": "Item is defective. Need refund for order #77665",
+              "expected_output": "REFUND_REQUEST: Order #77665 - defective"
+            },
+            "actual_output": "REFUND_REQUEST: Order #77665",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-REFUND_REQUEST: Order #77665 - defective+REFUND_REQUEST: Order #77665",
+            "error_category": "logic_error",
+            "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
+          }
+        ]
+      },
+      "optimizer_tokens_used": 36403
+    },
+    {
+      "iteration": 4,
+      "prompt": "Analyze the customer service message and categorize it with the appropriate request type and key details.\n\n**Valid Categories:**\n- RETURN_REQUEST: Customer wants to return an item\n- TRACKING_INQUIRY: Customer asking about order status or delivery\n- PRODUCT_INQUIRY: Questions about product features, availability, or specifications\n- BILLING_ISSUE: Problems with charges, payments, or invoices\n- COMPLAINT: Expression of dissatisfaction or negative experience\n- ORDER_MODIFICATION: Request to change, cancel, or update an existing order\n- POSITIVE_FEEDBACK: Compliments, praise, or positive comments\n- REFUND_REQUEST: Customer specifically requesting money back\n- POLICY_QUESTION: Questions about store policies, warranties, or terms\n- DISCOUNT_INQUIRY: Questions about promotions, coupons, or price reductions\n\n**Output Format:**\nOutput ONLY: CATEGORY_NAME: Brief description\nDo NOT include the word \"CATEGORY:\" at the start. Just output the category name directly followed by colon and description.\n\n**CRITICAL RULES - Follow these exactly:**\n\n1. **For RETURN_REQUEST:** \n   - If order number present: \"Order #XXXXX\" (ONLY the order number, do NOT add reason like \"doesn't fit\" or \"wrong size\")\n   - If no order number: \"Return item\"\n\n2. **For TRACKING_INQUIRY:** Always use \"Check order status\" as the description.\n\n3. **For PRODUCT_INQUIRY:** Use these exact phrases:\n   - Color questions \u2192 \"Color availability\"\n   - Size questions \u2192 \"Size availability\"\n   - Feature/specification questions \u2192 \"Product features\"\n   - Material questions \u2192 \"Material information\"\n\n4. **For BILLING_ISSUE:** Use these exact phrases:\n   - Double/duplicate charges \u2192 \"Duplicate charge\"\n   - Charged but not received \u2192 \"Unauthorized charge\"\n   - Price mismatch \u2192 \"Price discrepancy\"\n   - Wrong amount charged \u2192 \"Incorrect amount\"\n\n5. **For COMPLAINT:** Use these exact phrases:\n   - Broken/defective product \u2192 \"Product defect\"\n   - Quality issues \u2192 \"Poor quality\"\n   - Doesn't match description/photos \u2192 \"Misleading description\"\n   - Bad customer service \u2192 \"Service issue\"\n   - Damaged in shipping \u2192 \"Shipping damage\"\n\n6. **For ORDER_MODIFICATION:** Use these exact phrases:\n   - Address change \u2192 \"Shipping address change\"\n   - Cancel order \u2192 \"Order cancellation\"\n   - Add items \u2192 \"Add items\"\n   - Remove items \u2192 \"Remove items\"\n\n7. **For POSITIVE_FEEDBACK:** Always use \"Satisfied customer\" as the description.\n\n8. **For REFUND_REQUEST:** \n   - If order number present WITH a reason (damaged, defective, broken, etc.): \"Order #XXXXX - reason\" (include brief reason after dash)\n   - If order number present WITHOUT specific reason: \"Order #XXXXX\"\n   - If no order number: Brief reason like \"Product broken\"\n   - Examples: \"Order #98765 - damaged item\", \"Order #77665 - defective\"\n\n9. **For POLICY_QUESTION:** Use these exact phrases:\n   - Return policy \u2192 \"Return policy\"\n   - Return timeframe \u2192 \"Return window\"\n   - Price matching \u2192 \"Price matching\"\n   - Warranty \u2192 \"Warranty policy\"\n   - Shipping questions \u2192 \"Shipping policy\"\n\n10. **For DISCOUNT_INQUIRY:** Use these exact phrases:\n    - Discount/promo codes \u2192 \"Promo code request\"\n    - Current sales/promotions \u2192 \"Current promotions\"\n    - Coupons \u2192 \"Coupon availability\"\n    - Student discounts \u2192 \"Student discount\"\n    - New/first-time customer \u2192 \"New customer discount\"\n\n**Examples:**\n- RETURN_REQUEST: Order #12345\n- TRACKING_INQUIRY: Check order status\n- PRODUCT_INQUIRY: Size availability\n- BILLING_ISSUE: Duplicate charge\n- COMPLAINT: Product defect\n- ORDER_MODIFICATION: Shipping address change\n- POSITIVE_FEEDBACK: Satisfied customer\n- REFUND_REQUEST: Order #98765 - damaged item\n- REFUND_REQUEST: Order #77665 - defective\n- POLICY_QUESTION: Return policy\n- DISCOUNT_INQUIRY: Promo code request\n\nAnalyze the following customer message:",
+      "training_pass_rate": 0.98,
+      "test_pass_rate": null,
+      "feedback": {
+        "pass_rate": 0.98,
+        "passed": 49,
         "total": 50,
         "failures": [
           {
@@ -523,82 +601,14 @@
             "diff": "--- expected+++ actual@@ -1 +1 @@-REFUND_REQUEST: Order #33221+REFUND_REQUEST: Order #33221 - never arrived",
             "error_category": "too_verbose",
             "analysis": "Output contains additional text beyond what was requested. Instructions should emphasize outputting ONLY the required information."
-          },
-          {
-            "case": {
-              "input": "Item is defective. Need refund for order #77665",
-              "expected_output": "REFUND_REQUEST: Order #77665 - defective"
-            },
-            "actual_output": "REFUND_REQUEST: Order #77665 - defective item",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-REFUND_REQUEST: Order #77665 - defective+REFUND_REQUEST: Order #77665 - defective item",
-            "error_category": "logic_error",
-            "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
-          },
-          {
-            "case": {
-              "input": "Want my money back. This is broken",
-              "expected_output": "REFUND_REQUEST: Product broken"
-            },
-            "actual_output": "REFUND_REQUEST: Broken item",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-REFUND_REQUEST: Product broken+REFUND_REQUEST: Broken item",
-            "error_category": "logic_error",
-            "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
           }
         ]
       },
-      "optimizer_tokens_used": 29393
-    },
-    {
-      "iteration": 3,
-      "prompt": "Analyze the customer service message provided and categorize it using exactly one of the following valid categories:\n\n- RETURN_REQUEST: Customer wants to return an item\n- TRACKING_INQUIRY: Customer asking about order status, delivery, or shipping\n- PRODUCT_INQUIRY: Customer asking questions about a product\n- BILLING_ISSUE: Customer has problems with charges or payments\n- COMPLAINT: Customer expressing dissatisfaction (not requesting specific action)\n- ORDER_MODIFICATION: Customer wants to change an existing order\n- POSITIVE_FEEDBACK: Customer expressing satisfaction or praise\n- REFUND_REQUEST: Customer specifically requesting money back\n- POLICY_QUESTION: Customer asking about store policies\n- DISCOUNT_INQUIRY: Customer asking about discounts, coupons, or promotions\n\n**Output Format:**\nOutput ONLY the category and brief description in this exact format:\nCATEGORY_NAME: Brief description\n\nDo NOT include the word \"CATEGORY:\" at the beginning. Just output the category name directly followed by a colon and the description.\n\n**Description Guidelines:**\n- Use exactly 2-3 words for descriptions\n- For RETURN_REQUEST with order number: use \"Order #XXXXX\"\n- For REFUND_REQUEST with order number and reason: use \"Order #XXXXX - reason\" where reason is ONE WORD ONLY (e.g., \"damaged\", \"defective\", \"broken\")\n- For REFUND_REQUEST with order number but no specific product issue (e.g., never arrived, not received): use ONLY \"Order #XXXXX\" without any reason\n- For REFUND_REQUEST without order number but with broken/defective item: use \"Product broken\"\n- For TRACKING_INQUIRY: always use \"Check order status\"\n- For POSITIVE_FEEDBACK: always use \"Satisfied customer\"\n- For PRODUCT_INQUIRY about colors: use \"Color availability\"\n- For PRODUCT_INQUIRY about sizes: use \"Size availability\"\n- For PRODUCT_INQUIRY about features/materials: use \"Product features\" or \"Material information\"\n- For BILLING_ISSUE with double charges: use \"Duplicate charge\"\n- For BILLING_ISSUE with wrong amount: use \"Incorrect amount\"\n- For BILLING_ISSUE with price mismatch: use \"Price discrepancy\"\n- For BILLING_ISSUE when charged but not received: use \"Unauthorized charge\"\n- For COMPLAINT about broken/defective items: use \"Product defect\"\n- For COMPLAINT about quality: use \"Poor quality\"\n- For COMPLAINT about misleading images/description: use \"Misleading description\"\n- For COMPLAINT about service: use \"Service issue\"\n- For COMPLAINT about damaged shipping: use \"Shipping damage\"\n- For ORDER_MODIFICATION address changes: use \"Shipping address change\"\n- For ORDER_MODIFICATION cancellations: use \"Order cancellation\"\n- For ORDER_MODIFICATION adding items: use \"Add items\"\n- For ORDER_MODIFICATION removing items: use \"Remove items\"\n- For POLICY_QUESTION: use the policy type only (e.g., \"Return policy\", \"Return window\", \"Price matching\", \"Warranty policy\", \"Shipping policy\")\n- For DISCOUNT_INQUIRY about codes: use \"Promo code request\"\n- For DISCOUNT_INQUIRY about promotions: use \"Current promotions\"\n- For DISCOUNT_INQUIRY about coupons: use \"Coupon availability\"\n- For DISCOUNT_INQUIRY about student discounts: use \"Student discount\"\n- For DISCOUNT_INQUIRY about new customer deals: use \"New customer discount\"\n\n**Examples:**\nInput: I want to return my order #12345 because it doesn't fit\nOutput: RETURN_REQUEST: Order #12345\n\nInput: Still haven't received my order. When will it arrive?\nOutput: TRACKING_INQUIRY: Check order status\n\nInput: Thanks for the quick delivery! Everything looks great.\nOutput: POSITIVE_FEEDBACK: Satisfied customer\n\nInput: I need a refund for order #98765. The item was damaged.\nOutput: REFUND_REQUEST: Order #98765 - damaged\n\nInput: Please refund my money. Order #33221 never arrived\nOutput: REFUND_REQUEST: Order #33221\n\nInput: Item is defective. Need refund for order #77665\nOutput: REFUND_REQUEST: Order #77665 - defective\n\nInput: Want my money back. This is broken\nOutput: REFUND_REQUEST: Product broken\n\nAnalyze the following customer message:",
-      "training_pass_rate": 0.98,
-      "test_pass_rate": null,
-      "feedback": {
-        "pass_rate": 0.98,
-        "passed": 49,
-        "total": 50,
-        "failures": [
-          {
-            "case": {
-              "input": "I need a refund for order #98765. The item was damaged.",
-              "expected_output": "REFUND_REQUEST: Order #98765 - damaged item"
-            },
-            "actual_output": "REFUND_REQUEST: Order #98765 - damaged",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-REFUND_REQUEST: Order #98765 - damaged item+REFUND_REQUEST: Order #98765 - damaged",
-            "error_category": "logic_error",
-            "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
-          }
-        ]
-      },
-      "optimizer_tokens_used": 36912
-    },
-    {
-      "iteration": 4,
-      "prompt": "Analyze the customer service message provided and categorize it using exactly one of the following valid categories:\n\n- RETURN_REQUEST: Customer wants to return an item\n- TRACKING_INQUIRY: Customer asking about order status, delivery, or shipping\n- PRODUCT_INQUIRY: Customer asking questions about a product\n- BILLING_ISSUE: Customer has problems with charges or payments\n- COMPLAINT: Customer expressing dissatisfaction (not requesting specific action)\n- ORDER_MODIFICATION: Customer wants to change an existing order\n- POSITIVE_FEEDBACK: Customer expressing satisfaction or praise\n- REFUND_REQUEST: Customer specifically requesting money back\n- POLICY_QUESTION: Customer asking about store policies\n- DISCOUNT_INQUIRY: Customer asking about discounts, coupons, or promotions\n\n**Output Format:**\nOutput ONLY the category and brief description in this exact format:\nCATEGORY_NAME: Brief description\n\nDo NOT include the word \"CATEGORY:\" at the beginning. Just output the category name directly followed by a colon and the description.\n\n**Description Guidelines:**\n- Use exactly 2-3 words for descriptions\n- For RETURN_REQUEST with order number: use \"Order #XXXXX\"\n- For REFUND_REQUEST with order number and reason: use \"Order #XXXXX - reason\" where reason is ONE WORD ONLY (e.g., \"damaged\", \"defective\", \"broken\")\n- For REFUND_REQUEST with order number but no specific product issue (e.g., never arrived, not received): use ONLY \"Order #XXXXX\" without any reason\n- For REFUND_REQUEST without order number but with broken/defective item: use \"Product broken\"\n- For TRACKING_INQUIRY: always use \"Check order status\"\n- For POSITIVE_FEEDBACK: always use \"Satisfied customer\"\n- For PRODUCT_INQUIRY about colors: use \"Color availability\"\n- For PRODUCT_INQUIRY about sizes: use \"Size availability\"\n- For PRODUCT_INQUIRY about features/materials: use \"Product features\" or \"Material information\"\n- For BILLING_ISSUE with double charges: use \"Duplicate charge\"\n- For BILLING_ISSUE with wrong amount: use \"Incorrect amount\"\n- For BILLING_ISSUE with price mismatch: use \"Price discrepancy\"\n- For BILLING_ISSUE when charged but not received: use \"Unauthorized charge\"\n- For COMPLAINT about broken/defective items: use \"Product defect\"\n- For COMPLAINT about quality: use \"Poor quality\"\n- For COMPLAINT about misleading images/description: use \"Misleading description\"\n- For COMPLAINT about service: use \"Service issue\"\n- For COMPLAINT about damaged shipping: use \"Shipping damage\"\n- For ORDER_MODIFICATION address changes: use \"Shipping address change\"\n- For ORDER_MODIFICATION cancellations: use \"Order cancellation\"\n- For ORDER_MODIFICATION adding items: use \"Add items\"\n- For ORDER_MODIFICATION removing items: use \"Remove items\"\n- For POLICY_QUESTION: use the policy type only (e.g., \"Return policy\", \"Return window\", \"Price matching\", \"Warranty policy\", \"Shipping policy\")\n- For DISCOUNT_INQUIRY about codes: use \"Promo code request\"\n- For DISCOUNT_INQUIRY about promotions: use \"Current promotions\"\n- For DISCOUNT_INQUIRY about coupons: use \"Coupon availability\"\n- For DISCOUNT_INQUIRY about student discounts: use \"Student discount\"\n- For DISCOUNT_INQUIRY about new customer deals: use \"New customer discount\"\n\n**Examples:**\nInput: I want to return my order #12345 because it doesn't fit\nOutput: RETURN_REQUEST: Order #12345\n\nInput: Still haven't received my order. When will it arrive?\nOutput: TRACKING_INQUIRY: Check order status\n\nInput: Thanks for the quick delivery! Everything looks great.\nOutput: POSITIVE_FEEDBACK: Satisfied customer\n\nInput: I need a refund for order #98765. The item was damaged.\nOutput: REFUND_REQUEST: Order #98765 - damaged\n\nInput: Please refund my money. Order #33221 never arrived\nOutput: REFUND_REQUEST: Order #33221\n\nInput: Item is defective. Need refund for order #77665\nOutput: REFUND_REQUEST: Order #77665 - defective\n\nInput: Want my money back. This is broken\nOutput: REFUND_REQUEST: Product broken\n\nAnalyze the following customer message:",
-      "training_pass_rate": 0.98,
-      "test_pass_rate": null,
-      "feedback": {
-        "pass_rate": 0.98,
-        "passed": 49,
-        "total": 50,
-        "failures": [
-          {
-            "case": {
-              "input": "I need a refund for order #98765. The item was damaged.",
-              "expected_output": "REFUND_REQUEST: Order #98765 - damaged item"
-            },
-            "actual_output": "REFUND_REQUEST: Order #98765 - damaged",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-REFUND_REQUEST: Order #98765 - damaged item+REFUND_REQUEST: Order #98765 - damaged",
-            "error_category": "logic_error",
-            "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
-          }
-        ]
-      },
-      "optimizer_tokens_used": 44724
+      "optimizer_tokens_used": 43949
     },
     {
       "iteration": 5,
-      "prompt": "Analyze the customer service message provided and categorize it using exactly one of the following valid categories:\n\n- RETURN_REQUEST: Customer wants to return an item\n- TRACKING_INQUIRY: Customer asking about order status, delivery, or shipping\n- PRODUCT_INQUIRY: Customer asking questions about a product\n- BILLING_ISSUE: Customer has problems with charges or payments\n- COMPLAINT: Customer expressing dissatisfaction (not requesting specific action)\n- ORDER_MODIFICATION: Customer wants to change an existing order\n- POSITIVE_FEEDBACK: Customer expressing satisfaction or praise\n- REFUND_REQUEST: Customer specifically requesting money back\n- POLICY_QUESTION: Customer asking about store policies\n- DISCOUNT_INQUIRY: Customer asking about discounts, coupons, or promotions\n\n**Output Format:**\nOutput ONLY the category and brief description in this exact format:\nCATEGORY_NAME: Brief description\n\nDo NOT include the word \"CATEGORY:\" at the beginning. Just output the category name directly followed by a colon and the description.\n\n**Description Guidelines:**\n- Use exactly 2-3 words for descriptions\n- For RETURN_REQUEST with order number: use \"Order #XXXXX\"\n- For REFUND_REQUEST with order number and reason: use \"Order #XXXXX - reason\" where reason is ONE WORD ONLY (e.g., \"damaged\", \"defective\", \"broken\")\n- For REFUND_REQUEST with order number but no specific product issue (e.g., never arrived, not received): use ONLY \"Order #XXXXX\" without any reason\n- For REFUND_REQUEST without order number but with broken/defective item: use \"Product broken\"\n- For TRACKING_INQUIRY: always use \"Check order status\"\n- For POSITIVE_FEEDBACK: always use \"Satisfied customer\"\n- For PRODUCT_INQUIRY about colors: use \"Color availability\"\n- For PRODUCT_INQUIRY about sizes: use \"Size availability\"\n- For PRODUCT_INQUIRY about features/materials: use \"Product features\" or \"Material information\"\n- For BILLING_ISSUE with double charges: use \"Duplicate charge\"\n- For BILLING_ISSUE with wrong amount: use \"Incorrect amount\"\n- For BILLING_ISSUE with price mismatch: use \"Price discrepancy\"\n- For BILLING_ISSUE when charged but not received: use \"Unauthorized charge\"\n- For COMPLAINT about broken/defective items: use \"Product defect\"\n- For COMPLAINT about quality: use \"Poor quality\"\n- For COMPLAINT about misleading images/description: use \"Misleading description\"\n- For COMPLAINT about service: use \"Service issue\"\n- For COMPLAINT about damaged shipping: use \"Shipping damage\"\n- For ORDER_MODIFICATION address changes: use \"Shipping address change\"\n- For ORDER_MODIFICATION cancellations: use \"Order cancellation\"\n- For ORDER_MODIFICATION adding items: use \"Add items\"\n- For ORDER_MODIFICATION removing items: use \"Remove items\"\n- For POLICY_QUESTION: use the policy type only (e.g., \"Return policy\", \"Return window\", \"Price matching\", \"Warranty policy\", \"Shipping policy\")\n- For DISCOUNT_INQUIRY about codes: use \"Promo code request\"\n- For DISCOUNT_INQUIRY about promotions: use \"Current promotions\"\n- For DISCOUNT_INQUIRY about coupons: use \"Coupon availability\"\n- For DISCOUNT_INQUIRY about student discounts: use \"Student discount\"\n- For DISCOUNT_INQUIRY about new customer deals: use \"New customer discount\"\n\n**Examples:**\nInput: I want to return my order #12345 because it doesn't fit\nOutput: RETURN_REQUEST: Order #12345\n\nInput: Still haven't received my order. When will it arrive?\nOutput: TRACKING_INQUIRY: Check order status\n\nInput: Thanks for the quick delivery! Everything looks great.\nOutput: POSITIVE_FEEDBACK: Satisfied customer\n\nInput: I need a refund for order #98765. The item was damaged.\nOutput: REFUND_REQUEST: Order #98765 - damaged\n\nInput: Please refund my money. Order #33221 never arrived\nOutput: REFUND_REQUEST: Order #33221\n\nInput: Item is defective. Need refund for order #77665\nOutput: REFUND_REQUEST: Order #77665 - defective\n\nInput: Want my money back. This is broken\nOutput: REFUND_REQUEST: Product broken\n\nAnalyze the following customer message:",
+      "prompt": "Analyze the customer service message and categorize it with the appropriate request type and key details.\n\n**Valid Categories:**\n- RETURN_REQUEST: Customer wants to return an item\n- TRACKING_INQUIRY: Customer asking about order status or delivery\n- PRODUCT_INQUIRY: Questions about product features, availability, or specifications\n- BILLING_ISSUE: Problems with charges, payments, or invoices\n- COMPLAINT: Expression of dissatisfaction or negative experience\n- ORDER_MODIFICATION: Request to change, cancel, or update an existing order\n- POSITIVE_FEEDBACK: Compliments, praise, or positive comments\n- REFUND_REQUEST: Customer specifically requesting money back\n- POLICY_QUESTION: Questions about store policies, warranties, or terms\n- DISCOUNT_INQUIRY: Questions about promotions, coupons, or price reductions\n\n**Output Format:**\nOutput ONLY: CATEGORY_NAME: Brief description\nDo NOT include the word \"CATEGORY:\" at the start. Just output the category name directly followed by colon and description.\n\n**CRITICAL RULES - Follow these exactly:**\n\n1. **For RETURN_REQUEST:** \n   - If order number present: \"Order #XXXXX\" (ONLY the order number, do NOT add reason like \"doesn't fit\" or \"wrong size\")\n   - If no order number: \"Return item\"\n\n2. **For TRACKING_INQUIRY:** Always use \"Check order status\" as the description.\n\n3. **For PRODUCT_INQUIRY:** Use these exact phrases:\n   - Color questions \u2192 \"Color availability\"\n   - Size questions \u2192 \"Size availability\"\n   - Feature/specification questions \u2192 \"Product features\"\n   - Material questions \u2192 \"Material information\"\n\n4. **For BILLING_ISSUE:** Use these exact phrases:\n   - Double/duplicate charges \u2192 \"Duplicate charge\"\n   - Charged but not received \u2192 \"Unauthorized charge\"\n   - Price mismatch \u2192 \"Price discrepancy\"\n   - Wrong amount charged \u2192 \"Incorrect amount\"\n\n5. **For COMPLAINT:** Use these exact phrases:\n   - Broken/defective product \u2192 \"Product defect\"\n   - Quality issues \u2192 \"Poor quality\"\n   - Doesn't match description/photos \u2192 \"Misleading description\"\n   - Bad customer service \u2192 \"Service issue\"\n   - Damaged in shipping \u2192 \"Shipping damage\"\n\n6. **For ORDER_MODIFICATION:** Use these exact phrases:\n   - Address change \u2192 \"Shipping address change\"\n   - Cancel order \u2192 \"Order cancellation\"\n   - Add items \u2192 \"Add items\"\n   - Remove items \u2192 \"Remove items\"\n\n7. **For POSITIVE_FEEDBACK:** Always use \"Satisfied customer\" as the description.\n\n8. **For REFUND_REQUEST:** \n   - If order number present WITH a reason (damaged, defective, broken, etc.): \"Order #XXXXX - reason\" (include brief reason after dash)\n   - If order number present WITHOUT specific reason: \"Order #XXXXX\"\n   - If no order number: Brief reason like \"Product broken\"\n   - Examples: \"Order #98765 - damaged item\", \"Order #77665 - defective\"\n\n9. **For POLICY_QUESTION:** Use these exact phrases:\n   - Return policy \u2192 \"Return policy\"\n   - Return timeframe \u2192 \"Return window\"\n   - Price matching \u2192 \"Price matching\"\n   - Warranty \u2192 \"Warranty policy\"\n   - Shipping questions \u2192 \"Shipping policy\"\n\n10. **For DISCOUNT_INQUIRY:** Use these exact phrases:\n    - Discount/promo codes \u2192 \"Promo code request\"\n    - Current sales/promotions \u2192 \"Current promotions\"\n    - Coupons \u2192 \"Coupon availability\"\n    - Student discounts \u2192 \"Student discount\"\n    - New/first-time customer \u2192 \"New customer discount\"\n\n**Examples:**\n- RETURN_REQUEST: Order #12345\n- TRACKING_INQUIRY: Check order status\n- PRODUCT_INQUIRY: Size availability\n- BILLING_ISSUE: Duplicate charge\n- COMPLAINT: Product defect\n- ORDER_MODIFICATION: Shipping address change\n- POSITIVE_FEEDBACK: Satisfied customer\n- REFUND_REQUEST: Order #98765 - damaged item\n- REFUND_REQUEST: Order #77665 - defective\n- POLICY_QUESTION: Return policy\n- DISCOUNT_INQUIRY: Promo code request\n\nAnalyze the following customer message:",
       "training_pass_rate": 0.98,
       "test_pass_rate": null,
       "feedback": {
@@ -608,21 +618,45 @@
         "failures": [
           {
             "case": {
-              "input": "I need a refund for order #98765. The item was damaged.",
-              "expected_output": "REFUND_REQUEST: Order #98765 - damaged item"
+              "input": "Please refund my money. Order #33221 never arrived",
+              "expected_output": "REFUND_REQUEST: Order #33221"
             },
-            "actual_output": "REFUND_REQUEST: Order #98765 - damaged",
-            "diff": "--- expected+++ actual@@ -1 +1 @@-REFUND_REQUEST: Order #98765 - damaged item+REFUND_REQUEST: Order #98765 - damaged",
-            "error_category": "logic_error",
-            "analysis": "Incorrect reasoning or interpretation of the input. Instructions may need more examples or clearer task definition."
+            "actual_output": "REFUND_REQUEST: Order #33221 - never arrived",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-REFUND_REQUEST: Order #33221+REFUND_REQUEST: Order #33221 - never arrived",
+            "error_category": "too_verbose",
+            "analysis": "Output contains additional text beyond what was requested. Instructions should emphasize outputting ONLY the required information."
           }
         ]
       },
-      "optimizer_tokens_used": 52599
+      "optimizer_tokens_used": 51488
+    },
+    {
+      "iteration": 6,
+      "prompt": "Analyze the customer service message and categorize it with the appropriate request type and key details.\n\n**Valid Categories:**\n- RETURN_REQUEST: Customer wants to return an item\n- TRACKING_INQUIRY: Customer asking about order status or delivery\n- PRODUCT_INQUIRY: Questions about product features, availability, or specifications\n- BILLING_ISSUE: Problems with charges, payments, or invoices\n- COMPLAINT: Expression of dissatisfaction or negative experience\n- ORDER_MODIFICATION: Request to change, cancel, or update an existing order\n- POSITIVE_FEEDBACK: Compliments, praise, or positive comments\n- REFUND_REQUEST: Customer specifically requesting money back\n- POLICY_QUESTION: Questions about store policies, warranties, or terms\n- DISCOUNT_INQUIRY: Questions about promotions, coupons, or price reductions\n\n**Output Format:**\nOutput ONLY: CATEGORY_NAME: Brief description\nDo NOT include the word \"CATEGORY:\" at the start. Just output the category name directly followed by colon and description.\n\n**CRITICAL RULES - Follow these exactly:**\n\n1. **For RETURN_REQUEST:** \n   - If order number present: \"Order #XXXXX\" (ONLY the order number, do NOT add reason like \"doesn't fit\" or \"wrong size\")\n   - If no order number: \"Return item\"\n\n2. **For TRACKING_INQUIRY:** Always use \"Check order status\" as the description.\n\n3. **For PRODUCT_INQUIRY:** Use these exact phrases:\n   - Color questions \u2192 \"Color availability\"\n   - Size questions \u2192 \"Size availability\"\n   - Feature/specification questions \u2192 \"Product features\"\n   - Material questions \u2192 \"Material information\"\n\n4. **For BILLING_ISSUE:** Use these exact phrases:\n   - Double/duplicate charges \u2192 \"Duplicate charge\"\n   - Charged but not received \u2192 \"Unauthorized charge\"\n   - Price mismatch \u2192 \"Price discrepancy\"\n   - Wrong amount charged \u2192 \"Incorrect amount\"\n\n5. **For COMPLAINT:** Use these exact phrases:\n   - Broken/defective product \u2192 \"Product defect\"\n   - Quality issues \u2192 \"Poor quality\"\n   - Doesn't match description/photos \u2192 \"Misleading description\"\n   - Bad customer service \u2192 \"Service issue\"\n   - Damaged in shipping \u2192 \"Shipping damage\"\n\n6. **For ORDER_MODIFICATION:** Use these exact phrases:\n   - Address change \u2192 \"Shipping address change\"\n   - Cancel order \u2192 \"Order cancellation\"\n   - Add items \u2192 \"Add items\"\n   - Remove items \u2192 \"Remove items\"\n\n7. **For POSITIVE_FEEDBACK:** Always use \"Satisfied customer\" as the description.\n\n8. **For REFUND_REQUEST:** \n   - If order number present WITH a reason (damaged, defective, broken, etc.): \"Order #XXXXX - reason\" (include brief reason after dash)\n   - If order number present WITHOUT specific reason: \"Order #XXXXX\"\n   - If no order number: Brief reason like \"Product broken\"\n   - Examples: \"Order #98765 - damaged item\", \"Order #77665 - defective\"\n\n9. **For POLICY_QUESTION:** Use these exact phrases:\n   - Return policy \u2192 \"Return policy\"\n   - Return timeframe \u2192 \"Return window\"\n   - Price matching \u2192 \"Price matching\"\n   - Warranty \u2192 \"Warranty policy\"\n   - Shipping questions \u2192 \"Shipping policy\"\n\n10. **For DISCOUNT_INQUIRY:** Use these exact phrases:\n    - Discount/promo codes \u2192 \"Promo code request\"\n    - Current sales/promotions \u2192 \"Current promotions\"\n    - Coupons \u2192 \"Coupon availability\"\n    - Student discounts \u2192 \"Student discount\"\n    - New/first-time customer \u2192 \"New customer discount\"\n\n**Examples:**\n- RETURN_REQUEST: Order #12345\n- TRACKING_INQUIRY: Check order status\n- PRODUCT_INQUIRY: Size availability\n- BILLING_ISSUE: Duplicate charge\n- COMPLAINT: Product defect\n- ORDER_MODIFICATION: Shipping address change\n- POSITIVE_FEEDBACK: Satisfied customer\n- REFUND_REQUEST: Order #98765 - damaged item\n- REFUND_REQUEST: Order #77665 - defective\n- POLICY_QUESTION: Return policy\n- DISCOUNT_INQUIRY: Promo code request\n\nAnalyze the following customer message:",
+      "training_pass_rate": 0.98,
+      "test_pass_rate": null,
+      "feedback": {
+        "pass_rate": 0.98,
+        "passed": 49,
+        "total": 50,
+        "failures": [
+          {
+            "case": {
+              "input": "Please refund my money. Order #33221 never arrived",
+              "expected_output": "REFUND_REQUEST: Order #33221"
+            },
+            "actual_output": "REFUND_REQUEST: Order #33221 - never arrived",
+            "diff": "--- expected+++ actual@@ -1 +1 @@-REFUND_REQUEST: Order #33221+REFUND_REQUEST: Order #33221 - never arrived",
+            "error_category": "too_verbose",
+            "analysis": "Output contains additional text beyond what was requested. Instructions should emphasize outputting ONLY the required information."
+          }
+        ]
+      },
+      "optimizer_tokens_used": 59120
     }
   ],
   "training_pass_rate": 0.98,
   "test_pass_rate": 0.0,
-  "total_optimizer_tokens": 52599,
+  "total_optimizer_tokens": 59120,
   "message": "Optimization plateaued. Training: 98.0%, Test: 0.0%"
 }

@@ -1,0 +1,10 @@
+{"input": "I want to return my order #12345 because it doesn't fit", "expected_output": "RETURN_REQUEST: Order #12345"}
+{"input": "Where is my package? I ordered it 5 days ago.", "expected_output": "TRACKING_INQUIRY: Check order status"}
+{"input": "Do you have this shirt in blue?", "expected_output": "PRODUCT_INQUIRY: Color availability"}
+{"input": "I was charged twice for the same order!", "expected_output": "BILLING_ISSUE: Duplicate charge"}
+{"input": "Your product broke after 2 days. This is unacceptable!", "expected_output": "COMPLAINT: Product defect"}
+{"input": "Can I change my shipping address? I haven't received it yet.", "expected_output": "ORDER_MODIFICATION: Shipping address change"}
+{"input": "Thanks for the quick delivery! Everything looks great.", "expected_output": "POSITIVE_FEEDBACK: Satisfied customer"}
+{"input": "I need a refund for order #98765. The item was damaged.", "expected_output": "REFUND_REQUEST: Order #98765 - damaged item"}
+{"input": "What's your return policy?", "expected_output": "POLICY_QUESTION: Return policy"}
+{"input": "Is there a discount code I can use?", "expected_output": "DISCOUNT_INQUIRY: Promo code request"}

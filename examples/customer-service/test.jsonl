@@ -1,0 +1,5 @@
+{"input": "I received the wrong size. Can I exchange order #55555?", "expected_output": "RETURN_REQUEST: Order #55555"}
+{"input": "My order still hasn't arrived and it's been a week.", "expected_output": "TRACKING_INQUIRY: Check order status"}
+{"input": "The product quality is terrible. I want my money back.", "expected_output": "COMPLAINT: Product defect"}
+{"input": "How long do I have to return an item?", "expected_output": "POLICY_QUESTION: Return policy"}
+{"input": "Excellent service! Will shop here again.", "expected_output": "POSITIVE_FEEDBACK: Satisfied customer"}

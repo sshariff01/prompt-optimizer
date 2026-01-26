@@ -1,0 +1,31 @@
+task_description = """
+Analyze customer service messages and categorize them with the appropriate request type and key details.
+Output format: CATEGORY: Brief description
+Valid categories: RETURN_REQUEST, TRACKING_INQUIRY, PRODUCT_INQUIRY, BILLING_ISSUE, COMPLAINT, ORDER_MODIFICATION, POSITIVE_FEEDBACK, REFUND_REQUEST, POLICY_QUESTION, DISCOUNT_INQUIRY
+"""
+
+[target_model]
+provider = "anthropic"
+model = "claude-sonnet-4-20250514"
+temperature = 0.0
+max_tokens = 100
+
+[optimizer]
+model = "claude-opus-4-20250514"
+max_iterations = 20
+max_optimizer_tokens = 500000
+max_test_iterations = 10
+plateau_threshold = 4
+
+[data]
+training_set = "./examples/customer-service/train.jsonl"
+test_set = "./examples/customer-service/test.jsonl"
+
+[feedback]
+training_detail_level = "full"
+test_detail_level = "descriptive"
+
+[stopping_criteria]
+training_pass_rate = 1.0
+test_pass_rate = 1.0
+on_incomplete_convergence = "return_best"

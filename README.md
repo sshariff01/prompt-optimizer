@@ -266,6 +266,115 @@ Final Optimized Prompt:
 
 This demonstrates the system's ability to quickly generate effective zero-shot prompts with minimal iterations.
 
+---
+
+### Example 2: Customer Service Request Classification (Complex Task)
+
+**Task:** Categorize customer service messages into request types with key details
+
+**Training Data** (10 examples):
+```jsonl
+{"input": "I want to return my order #12345 because it doesn't fit", "expected_output": "RETURN_REQUEST: Order #12345"}
+{"input": "Where is my package? I ordered it 5 days ago.", "expected_output": "TRACKING_INQUIRY: Check order status"}
+{"input": "Do you have this shirt in blue?", "expected_output": "PRODUCT_INQUIRY: Color availability"}
+{"input": "I was charged twice for the same order!", "expected_output": "BILLING_ISSUE: Duplicate charge"}
+{"input": "Your product broke after 2 days. This is unacceptable!", "expected_output": "COMPLAINT: Product defect"}
+... (5 more examples)
+```
+
+**Validation Data** (5 examples):
+```jsonl
+{"input": "I received the wrong size. Can I exchange order #55555?", "expected_output": "RETURN_REQUEST: Order #55555"}
+{"input": "My order still hasn't arrived and it's been a week.", "expected_output": "TRACKING_INQUIRY: Check order status"}
+{"input": "The product quality is terrible. I want my money back.", "expected_output": "COMPLAINT: Product defect"}
+... (2 more examples)
+```
+
+### Run Output (Abbreviated):
+
+```
+$ prompt-optimizer examples/customer-service/config.toml
+
+Loading configuration...
+✓ Loaded 10 training cases
+✓ Loaded 5 test cases
+✓ Optimizer: claude-opus-4-20250514
+✓ Target model: claude-sonnet-4-20250514
+
+Iteration 0: Generating initial prompt...
+Initial evaluation: 0/10 passed (0.0%)
+
+======================================================================
+PHASE 1: Training Set Optimization
+======================================================================
+
+Iteration 1: Refining prompt...
+  Pass rate: 0/10 (0.0%)
+  Failures: 10
+  New pass rate: 8/10 (80.0%)
+
+Iteration 2: Refining prompt...
+  Pass rate: 8/10 (80.0%)
+  Failures: 2
+  New pass rate: 10/10 (100.0%)
+
+✓ Training set: 100% pass rate achieved!
+
+======================================================================
+PHASE 2: Test Set Validation
+======================================================================
+
+Initial test evaluation: 4/5 passed (80.0%)
+
+Iteration 4-13: Refining based on test patterns...
+  [Multiple iterations with feedback adjustments]
+  Test pass rate fluctuating: 40% → 60% → 80%
+
+⚠ Test iteration limit reached
+
+======================================================================
+
+Optimization Complete!
+
+╭─────────────────── Status: max_iterations ───────────────────────╮
+│ Reached maximum iterations (20).                                │
+│ Training: 100.0%, Test: 80.0%                                   │
+╰──────────────────────────────────────────────────────────────────╯
+
+Metrics:
+  Training Pass Rate: 100.0%
+  Test Pass Rate: 80.0%
+  Total Iterations: 14
+  Optimizer Tokens Used: 34,256
+
+Final Optimized Prompt: [Complex 200+ line prompt with detailed
+reasoning framework, category definitions, decision hierarchy, and
+nuanced intent recognition rules]
+
+✓ Results saved to examples/customer-service/optimization_result.json
+```
+
+### Key Takeaways:
+
+- **Complex Task:** Multi-category classification with nuanced intent detection
+- **More Iterations:** Required 14 iterations vs 2 for simple yes/no task
+- **Incomplete Convergence:** Hit test iteration limit at 80% validation accuracy
+- **Rich Prompt Generated:** System developed a sophisticated 200+ line prompt with:
+  - Detailed category definitions
+  - Decision hierarchy for ambiguous cases
+  - Context interpretation rules
+  - Special case handling
+- **Higher Cost:** Used 34,256 tokens (~$1.03) vs 303 tokens for simple task
+- **Training Success:** Still achieved 100% on training set
+- **Generalization Challenge:** Validation set revealed edge cases that were difficult to handle with pattern-only feedback
+
+This demonstrates the system's behavior on more challenging tasks where:
+1. Initial prompts may be completely wrong (0% → 100% on training)
+2. More iterations are needed for convergence
+3. Validation may not reach 100% within iteration limits
+4. The system generates increasingly sophisticated prompts to handle complexity
+5. Cost scales with task complexity
+
 ## Technology Stack
 
 - **Language:** Python 3.10+

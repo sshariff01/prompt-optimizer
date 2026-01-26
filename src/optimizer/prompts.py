@@ -19,6 +19,10 @@ Generate a clear, concise zero-shot prompt that will perform this task correctly
 - Format specifications
 - Guidance for edge cases
 
+IMPORTANT: The input will be provided AFTER your prompt in the format "Input: <user_input>".
+Do NOT include input placeholders like {input} or {{input}} in your prompt.
+Your prompt should end with instructions, and the actual input will be appended automatically.
+
 Output ONLY the prompt text, no explanations."""
 )
 
@@ -48,6 +52,9 @@ Case {{ loop.index }}:
 
 Your task: Analyze these failures and generate an improved version of the prompt.
 Focus on addressing the specific error patterns shown in the feedback.
+
+IMPORTANT: The input will be provided AFTER your prompt in the format "Input: <user_input>".
+Do NOT include input placeholders like {input} or {{input}} in your prompt.
 
 Output ONLY the refined prompt text, no explanations."""
 )
@@ -81,6 +88,9 @@ Error Type {{ loop.index }}: {{ pattern.error_type }} ({{ pattern.count }} failu
 Your task: Analyze these error patterns and generate an improved version of the prompt.
 Focus on generalizing the prompt to handle these patterns, NOT on memorizing specific cases.
 The goal is to make the prompt more robust without overfitting to the test set.
+
+IMPORTANT: The input will be provided AFTER your prompt in the format "Input: <user_input>".
+Do NOT include input placeholders like {input} or {{input}} in your prompt.
 
 Output ONLY the refined prompt text, no explanations."""
 )

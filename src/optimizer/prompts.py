@@ -30,6 +30,10 @@ Output ONLY the prompt text, no explanations."""
 REFINEMENT_PROMPT_TRAINING = Template(
     """You are refining a prompt that is not performing perfectly on the training set.
 
+{% if optimization_context %}
+{{ optimization_context }}
+
+{% endif %}
 Current Prompt:
 {{ current_prompt }}
 
@@ -63,6 +67,10 @@ Output ONLY the refined prompt text, no explanations."""
 REFINEMENT_PROMPT_TEST = Template(
     """You are refining a prompt based on test set validation results.
 
+{% if optimization_context %}
+{{ optimization_context }}
+
+{% endif %}
 Current Prompt:
 {{ current_prompt }}
 
@@ -117,6 +125,7 @@ def render_training_refinement(
     passed: int,
     total: int,
     failures: list,
+    optimization_context: str = "",
 ) -> str:
     """Render the training set refinement prompt.
 
@@ -126,6 +135,7 @@ def render_training_refinement(
         passed: Number of cases passed
         total: Total number of cases
         failures: List of FailureAnalysis objects
+        optimization_context: Context from previous iterations
 
     Returns:
         Rendered prompt for Opus
@@ -136,6 +146,7 @@ def render_training_refinement(
         passed=passed,
         total=total,
         failures=failures,
+        optimization_context=optimization_context,
     )
 
 
@@ -145,6 +156,7 @@ def render_test_refinement(
     passed: int,
     total: int,
     error_patterns: list,
+    optimization_context: str = "",
 ) -> str:
     """Render the test set refinement prompt.
 
@@ -154,6 +166,7 @@ def render_test_refinement(
         passed: Number of cases passed
         total: Total number of cases
         error_patterns: List of ErrorPattern objects
+        optimization_context: Context from previous iterations
 
     Returns:
         Rendered prompt for Opus
@@ -164,4 +177,5 @@ def render_test_refinement(
         passed=passed,
         total=total,
         error_patterns=error_patterns,
+        optimization_context=optimization_context,
     )

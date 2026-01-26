@@ -10,6 +10,7 @@ from src.optimizer.models import (
     OptimizationResult,
     OptimizationStatus,
 )
+from src.optimizer.optimization_memory import OptimizationMemory, IterationSummary
 from src.orchestrator.prompt_history import PromptHistory
 from src.providers.base import LLMProvider
 
@@ -38,6 +39,7 @@ class OptimizationLoop:
         self.feedback_analyzer = FeedbackAnalyzer()
         self.iteration_history: list[IterationResult] = []
         self.prompt_history = PromptHistory()
+        self.optimization_memory = OptimizationMemory(max_recent_history=3)
         self.verbose = verbose
 
     def optimize(
@@ -151,9 +153,11 @@ class OptimizationLoop:
             previous_pass_rate = training_pass_rate
 
             # Refine prompt based on feedback
+            optimization_context = self.optimization_memory.get_context_string()
             candidate_prompt = self.meta_optimizer.refine_prompt_training(
                 current_prompt=current_prompt,
                 feedback=feedback,
+                optimization_context=optimization_context,
             )
             if self.verbose:
                 print(f"\n  Candidate prompt:\n{candidate_prompt}\n")
@@ -163,7 +167,9 @@ class OptimizationLoop:
             new_pass_rate, passed, total = self.test_runner.compute_pass_rate(candidate_results)
 
             # Validate: only accept if improvement or maintaining performance
-            if self.prompt_history.should_accept(new_pass_rate, previous_pass_rate, phase="training"):
+            accepted = self.prompt_history.should_accept(new_pass_rate, previous_pass_rate, phase="training")
+
+            if accepted:
                 # Accept: update to new prompt and results
                 results = candidate_results
                 current_prompt = candidate_prompt
@@ -178,6 +184,23 @@ class OptimizationLoop:
                 print(f"  Keeping previous prompt")
 
             print(f"  Current pass rate: {int(training_pass_rate * total)}/{total} ({training_pass_rate:.1%})\n")
+
+            # Record iteration summary in memory
+            target_issues = self._extract_target_issues(feedback)
+            prompt_change_desc = self._describe_prompt_change(feedback, phase="training")
+            outcome = self._describe_outcome(previous_pass_rate, new_pass_rate, accepted, feedback)
+
+            self.optimization_memory.add_iteration(
+                IterationSummary(
+                    iteration=iteration,
+                    prompt_change=prompt_change_desc,
+                    target_issues=target_issues,
+                    accepted=accepted,
+                    training_before=previous_pass_rate,
+                    training_after=new_pass_rate if accepted else previous_pass_rate,
+                    outcome=outcome,
+                )
+            )
 
             # Add to prompt history
             self.prompt_history.add_version(
@@ -319,9 +342,11 @@ class OptimizationLoop:
             previous_training_pass_rate = training_pass_rate
 
             # Refine prompt based on descriptive test feedback
+            optimization_context = self.optimization_memory.get_context_string()
             candidate_prompt = self.meta_optimizer.refine_prompt_test(
                 current_prompt=current_prompt,
                 feedback=feedback,
+                optimization_context=optimization_context,
             )
             if self.verbose:
                 print(f"\n  Candidate prompt:\n{candidate_prompt}\n")
@@ -333,11 +358,15 @@ class OptimizationLoop:
 
             # Check if training performance is maintained
             total_test_cases = len(test_cases)
+            accepted = False
+            new_test_pass_rate = previous_test_pass_rate  # Default if training regressed
+
             if new_training_pass_rate < previous_training_pass_rate:
                 # Training regressed - reject immediately and restore previous state
                 results = previous_results  # Restore results to match current_prompt
                 print(f"  \033[91m✗ Rejected (training regression): {previous_training_pass_rate:.1%} → {new_training_pass_rate:.1%}\033[0m")
                 print(f"  Keeping previous prompt")
+                new_training_pass_rate = previous_training_pass_rate  # Restore for summary
             else:
                 # Training OK, now evaluate on test set
                 candidate_results = self.test_runner.run_eval(candidate_prompt, test_cases)
@@ -346,6 +375,7 @@ class OptimizationLoop:
                 # Validate: only accept if improvement or maintaining performance on test
                 if self.prompt_history.should_accept(new_test_pass_rate, previous_test_pass_rate, phase="test"):
                     # Accept: update to new prompt and results
+                    accepted = True
                     results = candidate_results
                     current_prompt = candidate_prompt
                     test_pass_rate = new_test_pass_rate
@@ -356,10 +386,34 @@ class OptimizationLoop:
                     results = previous_results  # Restore results to match current_prompt
                     current_prompt = previous_prompt
                     test_pass_rate = previous_test_pass_rate
+                    new_training_pass_rate = previous_training_pass_rate  # Restore for summary
                     print(f"  \033[91m✗ Rejected (test regression): {previous_test_pass_rate:.1%} → {new_test_pass_rate:.1%}\033[0m")
                     print(f"  Keeping previous prompt")
 
             print(f"  Current test pass rate: {int(test_pass_rate * total_test_cases)}/{total_test_cases} ({test_pass_rate:.1%})\n")
+
+            # Record iteration summary in memory
+            target_issues = self._extract_target_issues(feedback)
+            prompt_change_desc = self._describe_prompt_change(feedback, phase="test")
+            outcome = self._describe_test_outcome(
+                previous_training_pass_rate, new_training_pass_rate,
+                previous_test_pass_rate, new_test_pass_rate,
+                accepted, feedback
+            )
+
+            self.optimization_memory.add_iteration(
+                IterationSummary(
+                    iteration=iteration,
+                    prompt_change=prompt_change_desc,
+                    target_issues=target_issues,
+                    accepted=accepted,
+                    training_before=previous_training_pass_rate,
+                    training_after=training_pass_rate if accepted else previous_training_pass_rate,
+                    test_before=previous_test_pass_rate,
+                    test_after=test_pass_rate if accepted else previous_test_pass_rate,
+                    outcome=outcome,
+                )
+            )
 
             # Add to prompt history
             self.prompt_history.add_version(
@@ -470,3 +524,112 @@ class OptimizationLoop:
             total_optimizer_tokens=self.meta_optimizer.get_total_tokens_used(),
             message=message,
         )
+
+    def _extract_target_issues(self, feedback) -> list[str]:
+        """Extract what issues this iteration is targeting.
+
+        Args:
+            feedback: Feedback object (DetailedFeedback or DescriptiveFeedback)
+
+        Returns:
+            List of issue descriptions
+        """
+        issues = []
+
+        # Handle DetailedFeedback (training phase)
+        if hasattr(feedback, 'failures'):
+            # Count failures by error category
+            error_counts = {}
+            for failure in feedback.failures:
+                category = failure.error_category.value
+                error_counts[category] = error_counts.get(category, 0) + 1
+
+            for category, count in error_counts.items():
+                issues.append(f"{count} {category} error{'s' if count > 1 else ''}")
+
+        # Handle DescriptiveFeedback (test phase)
+        elif hasattr(feedback, 'error_patterns'):
+            for pattern in feedback.error_patterns:
+                issues.append(f"{pattern.count} {pattern.error_type.value} pattern{'s' if pattern.count > 1 else ''}")
+
+        return issues
+
+    def _describe_prompt_change(self, feedback, phase: str) -> str:
+        """Generate description of what change was attempted.
+
+        Args:
+            feedback: Feedback object
+            phase: "training" or "test"
+
+        Returns:
+            Description of the attempted change
+        """
+        # Extract main error types
+        if hasattr(feedback, 'failures') and feedback.failures:
+            main_errors = set(f.error_category.value for f in feedback.failures[:3])
+            error_desc = ", ".join(main_errors)
+            return f"Addressed {error_desc} errors from training feedback"
+
+        elif hasattr(feedback, 'error_patterns') and feedback.error_patterns:
+            main_patterns = [p.error_type.value for p in feedback.error_patterns[:2]]
+            pattern_desc = ", ".join(main_patterns)
+            return f"Refined prompt to handle {pattern_desc} patterns from test set"
+
+        return "Attempted prompt refinement"
+
+    def _describe_outcome(self, before: float, after: float, accepted: bool, feedback) -> str:
+        """Describe the outcome of a training iteration.
+
+        Args:
+            before: Pass rate before
+            after: Pass rate after
+            accepted: Whether change was accepted
+            feedback: Feedback object
+
+        Returns:
+            Outcome description
+        """
+        if not accepted:
+            return f"Introduced regressions, broke previously working cases"
+
+        # Calculate improvement
+        improvement = after - before
+        if improvement > 0:
+            # Count failures fixed
+            failures_before = int((1 - before) * feedback.total)
+            failures_after = int((1 - after) * feedback.total)
+            fixed_count = failures_before - failures_after
+            return f"Fixed {fixed_count} failure{'s' if fixed_count != 1 else ''}, improved by {improvement:.1%}"
+        else:
+            return "Maintained performance"
+
+    def _describe_test_outcome(
+        self,
+        train_before: float, train_after: float,
+        test_before: float, test_after: float,
+        accepted: bool, feedback
+    ) -> str:
+        """Describe the outcome of a test iteration.
+
+        Args:
+            train_before: Training pass rate before
+            train_after: Training pass rate after
+            test_before: Test pass rate before
+            test_after: Test pass rate after
+            accepted: Whether change was accepted
+            feedback: Feedback object
+
+        Returns:
+            Outcome description
+        """
+        if train_after < train_before:
+            return f"Regressed on training set, broke existing cases"
+
+        if not accepted:
+            return f"Regressed on test set, broke generalization"
+
+        test_improvement = test_after - test_before
+        if test_improvement > 0:
+            return f"Improved test performance by {test_improvement:.1%}, maintained training"
+        else:
+            return "Maintained both training and test performance"

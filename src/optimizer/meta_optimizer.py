@@ -56,12 +56,14 @@ class MetaOptimizer:
         self,
         current_prompt: str,
         feedback: DetailedFeedback,
+        optimization_context: str = "",
     ) -> str:
         """Refine prompt based on training set feedback (full details).
 
         Args:
             current_prompt: The current prompt to refine
             feedback: Detailed feedback with all failure information
+            optimization_context: Context from previous iterations
 
         Returns:
             Refined prompt text
@@ -73,6 +75,7 @@ class MetaOptimizer:
             passed=feedback.passed,
             total=feedback.total,
             failures=feedback.failures,
+            optimization_context=optimization_context,
         )
 
         # Generate refined prompt
@@ -92,12 +95,14 @@ class MetaOptimizer:
         self,
         current_prompt: str,
         feedback: DescriptiveFeedback,
+        optimization_context: str = "",
     ) -> str:
         """Refine prompt based on test set feedback (descriptive patterns only).
 
         Args:
             current_prompt: The current prompt to refine
             feedback: Descriptive feedback without specific test cases
+            optimization_context: Context from previous iterations
 
         Returns:
             Refined prompt text
@@ -109,6 +114,7 @@ class MetaOptimizer:
             passed=feedback.passed,
             total=feedback.total,
             error_patterns=feedback.error_patterns,
+            optimization_context=optimization_context,
         )
 
         # Generate refined prompt

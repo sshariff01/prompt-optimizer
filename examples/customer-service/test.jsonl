@@ -1,5 +1,15 @@
 {"input": "I received the wrong size. Can I exchange order #55555?", "expected_output": "RETURN_REQUEST: Order #55555"}
 {"input": "My order still hasn't arrived and it's been a week.", "expected_output": "TRACKING_INQUIRY: Check order status"}
-{"input": "The product quality is terrible. I want my money back.", "expected_output": "COMPLAINT: Product defect"}
-{"input": "How long do I have to return an item?", "expected_output": "POLICY_QUESTION: Return policy"}
-{"input": "Excellent service! Will shop here again.", "expected_output": "POSITIVE_FEEDBACK: Satisfied customer"}
+{"input": "The product quality is terrible. I want my money back.", "expected_output": "REFUND_REQUEST: Product quality"}
+{"input": "What fabrics are used in this sweater?", "expected_output": "PRODUCT_INQUIRY: Material information"}
+{"input": "I see two pending charges on my card for one order", "expected_output": "BILLING_ISSUE: Duplicate charge"}
+{"input": "This broke the first time I used it!", "expected_output": "COMPLAINT: Product defect"}
+{"input": "Need to change my order to a different color before shipping", "expected_output": "ORDER_MODIFICATION: Color change"}
+{"input": "Amazing product! Exceeded all expectations", "expected_output": "POSITIVE_FEEDBACK: Satisfied customer"}
+{"input": "How many days do I have for returns?", "expected_output": "POLICY_QUESTION: Return window"}
+{"input": "Any promo codes for today?", "expected_output": "DISCOUNT_INQUIRY: Promo code request"}
+{"input": "Can I send this back? It's not what I thought it would be", "expected_output": "RETURN_REQUEST: Product mismatch"}
+{"input": "Order #99999 - has this been shipped?", "expected_output": "TRACKING_INQUIRY: Check order status"}
+{"input": "Please cancel my pending order immediately", "expected_output": "ORDER_MODIFICATION: Order cancellation"}
+{"input": "Are these available in size XL?", "expected_output": "PRODUCT_INQUIRY: Size availability"}
+{"input": "The description online doesn't match what I received", "expected_output": "COMPLAINT: Misleading description"}

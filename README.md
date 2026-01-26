@@ -13,17 +13,17 @@ The system iteratively refines prompts until both training and test sets reach 1
 
 ## Key Features
 
-- **Iterative Refinement:** Uses Claude Opus 4.5 for intelligent meta-prompt engineering
+- **Iterative Refinement:** Uses advanced LLMs for intelligent meta-prompt engineering
+- **Model Flexibility:** Configurable optimizer and target models (Claude, GPT-4, Gemini, etc.)
 - **Rich Feedback:** Comprehensive error analysis with diffs, categorization, and pattern detection
 - **Overfitting Prevention:** Test feedback provides patterns without revealing specific examples
-- **Cost Controls:** Hard limits on iterations (30), tokens (1M), and plateau detection
+- **Cost Controls:** Hard limits on iterations, tokens, and plateau detection
 - **Zero-Shot Output:** Generates standalone instruction prompts (no few-shot examples)
-- **Configurable Target Models:** Optimize for any LLM (Claude, GPT-4, Gemini, etc.)
 
 ## Architecture
 
 **Components:**
-- **Optimizer:** Claude Opus 4.5 for meta-prompt engineering
+- **Optimizer:** Configurable LLM for meta-prompt engineering
 - **Test Runner:** Executes prompts against evaluation cases
 - **Feedback Analyzer:** Generates rich feedback (full for training, descriptive for test)
 - **Orchestrator:** Controls optimization loop with stopping criteria

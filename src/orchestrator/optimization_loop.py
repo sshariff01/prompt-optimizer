@@ -367,6 +367,9 @@ class OptimizationLoop:
                     test_pass_rate=test_pass_rate,
                 )
 
+            # Compute current test stats from current results
+            current_test_pass_rate, current_test_passed, current_test_total = self.test_runner.compute_pass_rate(results)
+
             # Generate feedback based on whether we had training regression last iteration
             if previous_training_regression is not None:
                 # Use combined feedback (test patterns + training constraints)
@@ -376,9 +379,9 @@ class OptimizationLoop:
                 training_regression_rate = 1.0 - (training_failed_count / training_total_count)
 
                 feedback = CombinedFeedback(
-                    test_pass_rate=test_pass_rate,
-                    test_passed=passed,
-                    test_total=total,
+                    test_pass_rate=current_test_pass_rate,
+                    test_passed=current_test_passed,
+                    test_total=current_test_total,
                     error_patterns=test_feedback.error_patterns,
                     training_pass_rate=training_regression_rate,
                     training_passed=training_total_count - training_failed_count,
@@ -387,7 +390,7 @@ class OptimizationLoop:
                 )
 
                 print(f"\033[94mIteration {iteration}: Refining with training constraints...\033[0m")
-                print(f"  Test pass rate: {passed}/{total} ({test_pass_rate:.1%})")
+                print(f"  Test pass rate: {current_test_passed}/{current_test_total} ({current_test_pass_rate:.1%})")
                 print(f"  Training constraints: {len(training_failures)} cases to preserve")
 
                 # Reset training regression tracking after using it
@@ -397,7 +400,7 @@ class OptimizationLoop:
                 feedback = self.feedback_analyzer.analyze_test_results(results)
 
                 print(f"\033[94mIteration {iteration}: Refining based on test patterns...\033[0m")
-                print(f"  Test pass rate: {passed}/{total} ({test_pass_rate:.1%})")
+                print(f"  Test pass rate: {current_test_passed}/{current_test_total} ({current_test_pass_rate:.1%})")
                 print(f"  Error patterns: {len(feedback.error_patterns)}")
 
             # Save current state before refinement

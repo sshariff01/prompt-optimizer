@@ -271,49 +271,59 @@ on_incomplete_convergence = "return_best"
 
 ## Implementation Phases
 
-### Phase 1: Core Loop (MVP)
-**Goal:** End-to-end working system
+### MVP = Phase 1 + Phase 2 (Complete Two-Phase System)
+
+**IMPORTANT:** The MVP encompasses BOTH Phase 1 and Phase 2 to deliver a complete, working two-phase optimization system. This is the minimum viable product that demonstrates the core value proposition: optimizing on training set with full feedback, then validating on test set with descriptive feedback to prevent overfitting.
+
+---
+
+### Phase 1: Core Loop (Training Optimization)
+**Goal:** Training set optimization with full feedback
 
 **Tasks:**
 1. Project setup (pyproject.toml, directory structure)
 2. Basic Pydantic models for config and data
 3. Simple meta_optimizer.py (Opus integration)
 4. Basic test_runner.py (execute prompt, return pass/fail)
-5. Simple orchestrator (loop until training passes)
-6. CLI entry point with basic output
+5. Feedback analyzer with detailed training feedback
+6. Simple orchestrator (loop until training passes)
+7. CLI entry point with basic output
 
 **Success Criteria:**
 - Can load config + training data
 - Can optimize prompt to pass training set
+- Full feedback with diffs and error categories
 - Prints results to console
 
-**Estimated:** ~500 LOC
+**Estimated:** ~600 LOC
 
 ---
 
-### Phase 2: Rich Feedback
-**Goal:** High-quality gradient signals
+### Phase 2: Test Set Validation (Completes MVP)
+**Goal:** Add test set validation with descriptive feedback to prevent overfitting
 
 **Tasks:**
 1. Implement feedback_analyzer.py:
-   - Full training feedback (diffs, categories)
    - Descriptive test feedback (patterns, no examples)
-2. Error categorization logic:
-   - Format violations
-   - Boundary confusion
-   - Logic errors
-   - Pattern detection across failures
-3. Enhanced meta-prompt template:
-   - Consumes rich feedback
-   - Generates targeted refinements
-4. Add test set validation phase
+2. Pattern detection logic:
+   - Group failures by error category
+   - Extract generic patterns
+   - Generate recommendations without revealing specifics
+3. Add test set refinement to meta-prompt templates
+4. Extend orchestrator to two-phase workflow:
+   - Phase 1: Train until 100%
+   - Phase 2: Test until 100% (or limits)
 
 **Success Criteria:**
-- Training feedback includes character diffs
+- Training feedback includes character diffs (full details)
 - Test feedback describes patterns without revealing cases
+- System reaches 100% on both training AND test sets
 - Optimizer uses feedback to make intelligent refinements
+- Demonstrates anti-overfitting mechanism works
 
-**Estimated:** ~800 LOC
+**Estimated:** ~300 LOC
+
+**Together (Phase 1 + Phase 2):** ~900 LOC for complete MVP
 
 ---
 

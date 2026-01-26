@@ -1,0 +1,20 @@
+{"input": "This product is amazing! Best purchase ever!", "expected_output": "positive"}
+{"input": "Absolutely love it. Would highly recommend.", "expected_output": "positive"}
+{"input": "Great quality and fast shipping.", "expected_output": "positive"}
+{"input": "Exceeded my expectations!", "expected_output": "positive"}
+{"input": "Perfect for what I needed.", "expected_output": "positive"}
+{"input": "Broke after one day. Completely useless.", "expected_output": "negative"}
+{"input": "Terrible quality. Don't waste your money.", "expected_output": "negative"}
+{"input": "Worst purchase I've ever made.", "expected_output": "negative"}
+{"input": "Does not work as advertised. Very disappointed.", "expected_output": "negative"}
+{"input": "Cheap materials and poor construction.", "expected_output": "negative"}
+{"input": "It's okay, nothing special.", "expected_output": "neutral"}
+{"input": "Product is adequate for the price.", "expected_output": "neutral"}
+{"input": "Does what it's supposed to do.", "expected_output": "neutral"}
+{"input": "Average quality, as expected.", "expected_output": "neutral"}
+{"input": "It works. No complaints, no compliments.", "expected_output": "neutral"}
+{"input": "Good quality but overpriced for what you get.", "expected_output": "neutral"}
+{"input": "Love the design but it's too small.", "expected_output": "neutral"}
+{"input": "Fast shipping but product is mediocre.", "expected_output": "neutral"}
+{"input": "Oh great, another broken product. Just what I needed.", "expected_output": "negative"}
+{"input": "Wonderful. It stopped working after a week.", "expected_output": "negative"}

@@ -3,148 +3,48 @@
 {"input": "Need to return item from order #24680. Doesn't match the description", "expected_output": "RETURN_REQUEST: Order #24680"}
 {"input": "How do I return this? Order #13579", "expected_output": "RETURN_REQUEST: Order #13579"}
 {"input": "I'd like to send this back, order number 98765", "expected_output": "RETURN_REQUEST: Order #98765"}
-{"input": "Return request for #11223. Color is wrong", "expected_output": "RETURN_REQUEST: Order #11223"}
-{"input": "This doesn't work as advertised. Want to return order #44556", "expected_output": "RETURN_REQUEST: Order #44556"}
-{"input": "Returning order #77889. Poor quality", "expected_output": "RETURN_REQUEST: Order #77889"}
-{"input": "Can you help me return my purchase? Order #33445", "expected_output": "RETURN_REQUEST: Order #33445"}
-{"input": "I need to send back order #55667. Too small", "expected_output": "RETURN_REQUEST: Order #55667"}
-{"input": "Want to return this item, order #88990", "expected_output": "RETURN_REQUEST: Order #88990"}
-{"input": "Return authorization needed for order #22334", "expected_output": "RETURN_REQUEST: Order #22334"}
-{"input": "How can I return order #66778? Not what I expected", "expected_output": "RETURN_REQUEST: Order #66778"}
-{"input": "Please process return for #99001", "expected_output": "RETURN_REQUEST: Order #99001"}
-{"input": "I'd like to exchange order #44332 for a different size", "expected_output": "RETURN_REQUEST: Order #44332"}
 {"input": "Where is my package? I ordered it 5 days ago.", "expected_output": "TRACKING_INQUIRY: Check order status"}
 {"input": "Still haven't received my order. When will it arrive?", "expected_output": "TRACKING_INQUIRY: Check order status"}
 {"input": "Can you check on order #55443? It's been a week", "expected_output": "TRACKING_INQUIRY: Check order status"}
 {"input": "Tracking shows delivered but I didn't get it", "expected_output": "TRACKING_INQUIRY: Check order status"}
 {"input": "Expected delivery was yesterday. Where is it?", "expected_output": "TRACKING_INQUIRY: Check order status"}
-{"input": "Order #33221 - when will this ship?", "expected_output": "TRACKING_INQUIRY: Check order status"}
-{"input": "My package hasn't moved in 3 days. What's going on?", "expected_output": "TRACKING_INQUIRY: Check order status"}
-{"input": "Can you provide tracking info for order #77665?", "expected_output": "TRACKING_INQUIRY: Check order status"}
-{"input": "Status update on my order please", "expected_output": "TRACKING_INQUIRY: Check order status"}
-{"input": "When should I expect delivery? Order placed last Monday", "expected_output": "TRACKING_INQUIRY: Check order status"}
-{"input": "Is my order #88776 shipped yet?", "expected_output": "TRACKING_INQUIRY: Check order status"}
-{"input": "Delivery estimate shows tomorrow but tracking hasn't updated", "expected_output": "TRACKING_INQUIRY: Check order status"}
-{"input": "Where's my package?! Order #44332", "expected_output": "TRACKING_INQUIRY: Check order status"}
-{"input": "Can you check if my order has left the warehouse?", "expected_output": "TRACKING_INQUIRY: Check order status"}
-{"input": "Still waiting for order from 2 weeks ago", "expected_output": "TRACKING_INQUIRY: Check order status"}
 {"input": "Do you have this shirt in blue?", "expected_output": "PRODUCT_INQUIRY: Color availability"}
 {"input": "What sizes do you have for this dress?", "expected_output": "PRODUCT_INQUIRY: Size availability"}
 {"input": "Is this jacket waterproof?", "expected_output": "PRODUCT_INQUIRY: Product features"}
 {"input": "Do you sell this in medium?", "expected_output": "PRODUCT_INQUIRY: Size availability"}
 {"input": "What material is this made from?", "expected_output": "PRODUCT_INQUIRY: Material information"}
-{"input": "Are these shoes available in black?", "expected_output": "PRODUCT_INQUIRY: Color availability"}
-{"input": "Does this come with batteries?", "expected_output": "PRODUCT_INQUIRY: Product contents"}
-{"input": "What's the weight capacity of this chair?", "expected_output": "PRODUCT_INQUIRY: Product specifications"}
-{"input": "Is this compatible with iPhone 15?", "expected_output": "PRODUCT_INQUIRY: Compatibility"}
-{"input": "Do you have more of these in stock?", "expected_output": "PRODUCT_INQUIRY: Stock availability"}
-{"input": "What colors does this come in?", "expected_output": "PRODUCT_INQUIRY: Color options"}
-{"input": "Can you tell me the dimensions?", "expected_output": "PRODUCT_INQUIRY: Product dimensions"}
-{"input": "Is this machine washable?", "expected_output": "PRODUCT_INQUIRY: Care instructions"}
-{"input": "When will you restock size large?", "expected_output": "PRODUCT_INQUIRY: Restock information"}
-{"input": "Does this product have a warranty?", "expected_output": "PRODUCT_INQUIRY: Warranty information"}
 {"input": "I was charged twice for the same order!", "expected_output": "BILLING_ISSUE: Duplicate charge"}
 {"input": "Why is my credit card showing 2 charges?", "expected_output": "BILLING_ISSUE: Duplicate charge"}
 {"input": "Never received my order but was charged", "expected_output": "BILLING_ISSUE: Unauthorized charge"}
 {"input": "The price on my receipt doesn't match what I saw online", "expected_output": "BILLING_ISSUE: Price discrepancy"}
 {"input": "I was charged $150 but order total was $120", "expected_output": "BILLING_ISSUE: Incorrect amount"}
-{"input": "Haven't received my refund yet. It's been 2 weeks", "expected_output": "BILLING_ISSUE: Missing refund"}
-{"input": "Why was I charged sales tax? I live in Oregon", "expected_output": "BILLING_ISSUE: Tax issue"}
-{"input": "Discount code didn't apply at checkout", "expected_output": "BILLING_ISSUE: Discount not applied"}
-{"input": "My payment was declined but money was taken from my account", "expected_output": "BILLING_ISSUE: Payment issue"}
-{"input": "Invoice shows wrong items", "expected_output": "BILLING_ISSUE: Invoice error"}
-{"input": "Charged for expedited shipping but got standard", "expected_output": "BILLING_ISSUE: Shipping charge error"}
-{"input": "Need a receipt for my recent purchase", "expected_output": "BILLING_ISSUE: Receipt request"}
-{"input": "Credit card statement shows 3 charges but I only ordered once", "expected_output": "BILLING_ISSUE: Multiple charges"}
-{"input": "When will my refund be processed?", "expected_output": "BILLING_ISSUE: Refund status"}
-{"input": "Promotional discount wasn't reflected in final price", "expected_output": "BILLING_ISSUE: Discount not applied"}
 {"input": "Your product broke after 2 days. This is unacceptable!", "expected_output": "COMPLAINT: Product defect"}
 {"input": "Terrible quality. Very disappointed", "expected_output": "COMPLAINT: Poor quality"}
 {"input": "This is nothing like the pictures online", "expected_output": "COMPLAINT: Misleading description"}
 {"input": "Customer service was rude and unhelpful", "expected_output": "COMPLAINT: Service issue"}
 {"input": "Package arrived completely damaged", "expected_output": "COMPLAINT: Shipping damage"}
-{"input": "Waited 3 weeks for this garbage", "expected_output": "COMPLAINT: Product quality"}
-{"input": "This doesn't work at all", "expected_output": "COMPLAINT: Product defect"}
-{"input": "Worst purchase I've ever made", "expected_output": "COMPLAINT: General dissatisfaction"}
-{"input": "False advertising! Not as described", "expected_output": "COMPLAINT: Misleading description"}
-{"input": "Color is completely different from the photo", "expected_output": "COMPLAINT: Product mismatch"}
-{"input": "Cheap materials, fell apart immediately", "expected_output": "COMPLAINT: Poor quality"}
-{"input": "Your company has gone downhill", "expected_output": "COMPLAINT: General dissatisfaction"}
-{"input": "Received wrong item and can't get anyone to help", "expected_output": "COMPLAINT: Wrong item"}
-{"input": "Missing pieces from my order", "expected_output": "COMPLAINT: Incomplete order"}
-{"input": "Never shopping here again. Awful experience", "expected_output": "COMPLAINT: General dissatisfaction"}
 {"input": "Can I change my shipping address? I haven't received it yet.", "expected_output": "ORDER_MODIFICATION: Shipping address change"}
 {"input": "Need to update delivery address for order #55443", "expected_output": "ORDER_MODIFICATION: Shipping address change"}
 {"input": "Can I cancel my order? Just placed it 10 minutes ago", "expected_output": "ORDER_MODIFICATION: Order cancellation"}
 {"input": "Want to add another item to my order #33221", "expected_output": "ORDER_MODIFICATION: Add items"}
 {"input": "Can I remove an item from my pending order?", "expected_output": "ORDER_MODIFICATION: Remove items"}
-{"input": "Need to change quantity on order #77665", "expected_output": "ORDER_MODIFICATION: Quantity change"}
-{"input": "Can I upgrade to expedited shipping?", "expected_output": "ORDER_MODIFICATION: Shipping upgrade"}
-{"input": "Want to change size before it ships", "expected_output": "ORDER_MODIFICATION: Size change"}
-{"input": "Please cancel order #88776", "expected_output": "ORDER_MODIFICATION: Order cancellation"}
-{"input": "Can I change color of item in my order?", "expected_output": "ORDER_MODIFICATION: Color change"}
-{"input": "Need to update my phone number for delivery", "expected_output": "ORDER_MODIFICATION: Contact update"}
-{"input": "Can I split my order into 2 shipments?", "expected_output": "ORDER_MODIFICATION: Shipping modification"}
-{"input": "Want to hold my order for a week before shipping", "expected_output": "ORDER_MODIFICATION: Shipping delay"}
-{"input": "Change billing address on order #44332", "expected_output": "ORDER_MODIFICATION: Billing address change"}
-{"input": "Can I use a different payment method?", "expected_output": "ORDER_MODIFICATION: Payment change"}
 {"input": "Thanks for the quick delivery! Everything looks great.", "expected_output": "POSITIVE_FEEDBACK: Satisfied customer"}
 {"input": "Excellent service, very happy!", "expected_output": "POSITIVE_FEEDBACK: Satisfied customer"}
 {"input": "Product exceeded my expectations", "expected_output": "POSITIVE_FEEDBACK: Satisfied customer"}
 {"input": "Fast shipping and great quality. Thank you!", "expected_output": "POSITIVE_FEEDBACK: Satisfied customer"}
 {"input": "Love this! Will definitely order again", "expected_output": "POSITIVE_FEEDBACK: Satisfied customer"}
-{"input": "Customer service was amazing. Very helpful", "expected_output": "POSITIVE_FEEDBACK: Satisfied customer"}
-{"input": "Perfect fit and beautiful color", "expected_output": "POSITIVE_FEEDBACK: Satisfied customer"}
-{"input": "Best purchase I've made in a while", "expected_output": "POSITIVE_FEEDBACK: Satisfied customer"}
-{"input": "Exactly as described. Very pleased", "expected_output": "POSITIVE_FEEDBACK: Satisfied customer"}
-{"input": "Great value for the price", "expected_output": "POSITIVE_FEEDBACK: Satisfied customer"}
-{"input": "Impressed with the quality!", "expected_output": "POSITIVE_FEEDBACK: Satisfied customer"}
-{"input": "Thank you for the excellent service", "expected_output": "POSITIVE_FEEDBACK: Satisfied customer"}
-{"input": "Everything arrived perfectly packaged", "expected_output": "POSITIVE_FEEDBACK: Satisfied customer"}
-{"input": "Five stars! Highly recommend", "expected_output": "POSITIVE_FEEDBACK: Satisfied customer"}
-{"input": "Customer for life after this experience", "expected_output": "POSITIVE_FEEDBACK: Satisfied customer"}
 {"input": "I need a refund for order #98765. The item was damaged.", "expected_output": "REFUND_REQUEST: Order #98765 - damaged item"}
 {"input": "Requesting full refund for #55443", "expected_output": "REFUND_REQUEST: Order #55443"}
 {"input": "Please refund my money. Order #33221 never arrived", "expected_output": "REFUND_REQUEST: Order #33221"}
 {"input": "Item is defective. Need refund for order #77665", "expected_output": "REFUND_REQUEST: Order #77665 - defective"}
 {"input": "Want my money back. This is broken", "expected_output": "REFUND_REQUEST: Product broken"}
-{"input": "Refund requested for order #88776. Wrong item sent", "expected_output": "REFUND_REQUEST: Order #88776 - wrong item"}
-{"input": "How do I get refunded? Order #44332", "expected_output": "REFUND_REQUEST: Order #44332"}
-{"input": "Product doesn't work. Need full refund", "expected_output": "REFUND_REQUEST: Product defective"}
-{"input": "Please process refund for #99887. Not satisfied", "expected_output": "REFUND_REQUEST: Order #99887"}
-{"input": "I want my money back immediately", "expected_output": "REFUND_REQUEST: Immediate refund"}
-{"input": "Refund order #66554 please. Item damaged in shipping", "expected_output": "REFUND_REQUEST: Order #66554 - damaged"}
-{"input": "How long until I get my refund?", "expected_output": "REFUND_REQUEST: Refund timeline"}
-{"input": "Need to be reimbursed for this purchase", "expected_output": "REFUND_REQUEST: Reimbursement"}
-{"input": "Requesting refund - received counterfeit item", "expected_output": "REFUND_REQUEST: Counterfeit item"}
-{"input": "Credit my account for order #22113", "expected_output": "REFUND_REQUEST: Order #22113"}
 {"input": "What's your return policy?", "expected_output": "POLICY_QUESTION: Return policy"}
 {"input": "How long do I have to return items?", "expected_output": "POLICY_QUESTION: Return window"}
 {"input": "Do you offer price matching?", "expected_output": "POLICY_QUESTION: Price matching"}
 {"input": "What's your warranty policy?", "expected_output": "POLICY_QUESTION: Warranty policy"}
 {"input": "Do you ship internationally?", "expected_output": "POLICY_QUESTION: Shipping policy"}
-{"input": "Can I return sale items?", "expected_output": "POLICY_QUESTION: Return policy"}
-{"input": "What payment methods do you accept?", "expected_output": "POLICY_QUESTION: Payment policy"}
-{"input": "Is there a restocking fee for returns?", "expected_output": "POLICY_QUESTION: Return fees"}
-{"input": "Do you have a satisfaction guarantee?", "expected_output": "POLICY_QUESTION: Guarantee policy"}
-{"input": "What's your privacy policy regarding customer data?", "expected_output": "POLICY_QUESTION: Privacy policy"}
-{"input": "Do you offer exchanges or only refunds?", "expected_output": "POLICY_QUESTION: Exchange policy"}
-{"input": "How long does shipping typically take?", "expected_output": "POLICY_QUESTION: Shipping timeline"}
-{"input": "Can I cancel my order after it ships?", "expected_output": "POLICY_QUESTION: Cancellation policy"}
-{"input": "Do you charge for returns?", "expected_output": "POLICY_QUESTION: Return shipping costs"}
-{"input": "What's your damage claim policy?", "expected_output": "POLICY_QUESTION: Damage policy"}
 {"input": "Is there a discount code I can use?", "expected_output": "DISCOUNT_INQUIRY: Promo code request"}
 {"input": "Do you have any current promotions?", "expected_output": "DISCOUNT_INQUIRY: Current promotions"}
 {"input": "Are there any coupons available?", "expected_output": "DISCOUNT_INQUIRY: Coupon availability"}
 {"input": "Do you offer student discounts?", "expected_output": "DISCOUNT_INQUIRY: Student discount"}
 {"input": "Any deals for first-time customers?", "expected_output": "DISCOUNT_INQUIRY: New customer discount"}
-{"input": "Is this item going on sale soon?", "expected_output": "DISCOUNT_INQUIRY: Future sales"}
-{"input": "Do you have military discounts?", "expected_output": "DISCOUNT_INQUIRY: Military discount"}
-{"input": "Can I get a discount for buying multiple items?", "expected_output": "DISCOUNT_INQUIRY: Bulk discount"}
-{"input": "Is there a loyalty program?", "expected_output": "DISCOUNT_INQUIRY: Loyalty program"}
-{"input": "Do you price match competitors?", "expected_output": "DISCOUNT_INQUIRY: Price matching"}
-{"input": "Any Black Friday deals?", "expected_output": "DISCOUNT_INQUIRY: Holiday sales"}
-{"input": "Do you offer senior discounts?", "expected_output": "DISCOUNT_INQUIRY: Senior discount"}
-{"input": "How can I get free shipping?", "expected_output": "DISCOUNT_INQUIRY: Free shipping"}
-{"input": "Are there any promo codes for this month?", "expected_output": "DISCOUNT_INQUIRY: Monthly promos"}
-{"input": "Do you have an email signup discount?", "expected_output": "DISCOUNT_INQUIRY: Signup discount"}

@@ -150,6 +150,7 @@ class OptimizationLoop:
                 current_prompt=current_prompt,
                 feedback=feedback,
             )
+            print(f"\n  Candidate prompt:\n{candidate_prompt}\n")
 
             # Evaluate refined prompt
             results = self.test_runner.run_eval(candidate_prompt, training_cases)
@@ -159,12 +160,12 @@ class OptimizationLoop:
             if self.prompt_history.should_accept(new_pass_rate, previous_pass_rate, phase="training"):
                 current_prompt = candidate_prompt
                 training_pass_rate = new_pass_rate
-                print(f"  ✓ Accepted: {previous_pass_rate:.1%} → {new_pass_rate:.1%}")
+                print(f"  \033[92m✓ Accepted: {previous_pass_rate:.1%} → {new_pass_rate:.1%}\033[0m")
             else:
                 # Reject and keep previous prompt
                 current_prompt = previous_prompt
                 training_pass_rate = previous_pass_rate
-                print(f"  ✗ Rejected (regression): {previous_pass_rate:.1%} → {new_pass_rate:.1%}")
+                print(f"  \033[91m✗ Rejected (regression): {previous_pass_rate:.1%} → {new_pass_rate:.1%}\033[0m")
                 print(f"  Keeping previous prompt")
 
             print(f"  Current pass rate: {int(training_pass_rate * total)}/{total} ({training_pass_rate:.1%})\n")
@@ -309,6 +310,7 @@ class OptimizationLoop:
                 current_prompt=current_prompt,
                 feedback=feedback,
             )
+            print(f"\n  Candidate prompt:\n{candidate_prompt}\n")
 
             # Evaluate refined prompt on test set
             results = self.test_runner.run_eval(candidate_prompt, test_cases)
@@ -318,12 +320,12 @@ class OptimizationLoop:
             if self.prompt_history.should_accept(new_test_pass_rate, previous_test_pass_rate, phase="test"):
                 current_prompt = candidate_prompt
                 test_pass_rate = new_test_pass_rate
-                print(f"  ✓ Accepted: {previous_test_pass_rate:.1%} → {new_test_pass_rate:.1%}")
+                print(f"  \033[92m✓ Accepted: {previous_test_pass_rate:.1%} → {new_test_pass_rate:.1%}\033[0m")
             else:
                 # Reject and keep previous prompt
                 current_prompt = previous_prompt
                 test_pass_rate = previous_test_pass_rate
-                print(f"  ✗ Rejected (regression): {previous_test_pass_rate:.1%} → {new_test_pass_rate:.1%}")
+                print(f"  \033[91m✗ Rejected (regression): {previous_test_pass_rate:.1%} → {new_test_pass_rate:.1%}\033[0m")
                 print(f"  Keeping previous prompt")
 
             print(f"  Current test pass rate: {int(test_pass_rate * total)}/{total} ({test_pass_rate:.1%})\n")

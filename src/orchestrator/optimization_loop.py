@@ -22,6 +22,7 @@ class OptimizationLoop:
         config: OptimizationConfig,
         optimizer_provider: LLMProvider,
         target_provider: LLMProvider,
+        verbose: bool = False,
     ):
         """Initialize the optimization loop.
 
@@ -29,6 +30,7 @@ class OptimizationLoop:
             config: Optimization configuration
             optimizer_provider: Provider for the meta-optimizer (e.g., Opus)
             target_provider: Provider for the target model being optimized
+            verbose: Show refined prompts at each iteration
         """
         self.config = config
         self.meta_optimizer = MetaOptimizer(optimizer_provider)
@@ -36,6 +38,7 @@ class OptimizationLoop:
         self.feedback_analyzer = FeedbackAnalyzer()
         self.iteration_history: list[IterationResult] = []
         self.prompt_history = PromptHistory()
+        self.verbose = verbose
 
     def optimize(
         self,
@@ -150,7 +153,8 @@ class OptimizationLoop:
                 current_prompt=current_prompt,
                 feedback=feedback,
             )
-            print(f"\n  Candidate prompt:\n{candidate_prompt}\n")
+            if self.verbose:
+                print(f"\n  Candidate prompt:\n{candidate_prompt}\n")
 
             # Evaluate refined prompt
             results = self.test_runner.run_eval(candidate_prompt, training_cases)
@@ -310,7 +314,8 @@ class OptimizationLoop:
                 current_prompt=current_prompt,
                 feedback=feedback,
             )
-            print(f"\n  Candidate prompt:\n{candidate_prompt}\n")
+            if self.verbose:
+                print(f"\n  Candidate prompt:\n{candidate_prompt}\n")
 
             # Evaluate refined prompt on test set
             results = self.test_runner.run_eval(candidate_prompt, test_cases)

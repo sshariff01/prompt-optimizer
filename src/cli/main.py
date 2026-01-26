@@ -34,6 +34,12 @@ def optimize(
         help="Path to configuration TOML file",
         exists=True,
     ),
+    verbose: bool = typer.Option(
+        False,
+        "--verbose",
+        "-v",
+        help="Show refined prompts at each iteration",
+    ),
 ):
     """Optimize a prompt based on configuration and training data."""
     try:
@@ -83,6 +89,7 @@ def optimize(
             config=config,
             optimizer_provider=optimizer_provider,
             target_provider=target_provider,
+            verbose=verbose,
         )
 
         # Run optimization

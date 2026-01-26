@@ -29,7 +29,7 @@ Build a prompt optimization system that uses Claude Opus 4.5 to iteratively refi
 - **Language:** Python 3.10+
 - **LLM SDK:** `anthropic` (official SDK)
 - **CLI:** `typer` (modern, type-safe)
-- **Config:** `pydantic` + `pydantic-settings` + `yaml`
+- **Config:** `pydantic` + `pydantic-settings` + `toml` (Python 3.11+ built-in `tomllib`)
 - **Diffing:** `deepdiff` + `difflib`
 - **Output:** `rich` (beautiful CLI)
 - **Testing:** `pytest` + `pytest-asyncio`
@@ -40,7 +40,7 @@ Build a prompt optimization system that uses Claude Opus 4.5 to iteratively refi
 **Key Principle:** Implementation designed for easy model swapping
 
 - **Provider Abstraction:** Abstract `LLMProvider` interface separates model calls from core logic
-- **Configuration-Driven:** Model selection via YAML config (`optimizer.model`, `target_model.provider`), not hardcoded
+- **Configuration-Driven:** Model selection via TOML config (`optimizer.model`, `target_model.provider`), not hardcoded
 - **Default Implementation:**
   - Optimizer: Claude Opus 4.5 (highest quality meta-reasoning)
   - Target: User-configurable (Claude Sonnet, GPT-4, Gemini, etc.)
@@ -171,14 +171,14 @@ prompt-optimizer/
 │   ├── integration/
 │   │   └── test_full_optimization.py
 │   └── fixtures/
-│       └── sample_evals.yaml
+│       └── sample_evals.toml
 ├── examples/
 │   ├── sentiment_analysis/
-│   │   ├── config.yaml
+│   │   ├── config.toml
 │   │   ├── train.jsonl
 │   │   └── test.jsonl
 │   └── code_generation/
-│       ├── config.yaml
+│       ├── config.toml
 │       ├── train.jsonl
 │       └── test.jsonl
 ├── docs/
@@ -205,7 +205,7 @@ dependencies = [
     "typer>=0.12.0",
     "pydantic>=2.8.0",
     "pydantic-settings>=2.4.0",
-    "pyyaml>=6.0.1",
+    "tomli>=2.0.1; python_version < '3.11'",  # TOML parser (built-in for 3.11+)
     "rich>=13.7.0",
     "deepdiff>=7.0.1",
     "jinja2>=3.1.4",
@@ -225,37 +225,38 @@ dev = [
 
 ## Configuration Format
 
-### config.yaml
+### config.toml
 
-```yaml
-task_description: |
-  Classify sentiment of product reviews as positive, negative, or neutral.
+```toml
+task_description = """
+Classify sentiment of product reviews as positive, negative, or neutral.
+"""
 
-target_model:
-  provider: anthropic
-  model: claude-sonnet-4.5
-  temperature: 0.0
-  max_tokens: 500
+[target_model]
+provider = "anthropic"
+model = "claude-sonnet-4.5"
+temperature = 0.0
+max_tokens = 500
 
-optimizer:
-  model: claude-opus-4.5
-  max_iterations: 30
-  max_optimizer_tokens: 1000000
-  max_test_iterations: 15
-  plateau_threshold: 7
+[optimizer]
+model = "claude-opus-4.5"
+max_iterations = 30
+max_optimizer_tokens = 1000000
+max_test_iterations = 15
+plateau_threshold = 7
 
-data:
-  training_set: ./data/train.jsonl
-  test_set: ./data/test.jsonl
+[data]
+training_set = "./data/train.jsonl"
+test_set = "./data/test.jsonl"
 
-feedback:
-  training_detail_level: full
-  test_detail_level: descriptive
+[feedback]
+training_detail_level = "full"
+test_detail_level = "descriptive"
 
-stopping_criteria:
-  training_pass_rate: 1.0
-  test_pass_rate: 1.0
-  on_incomplete_convergence: return_best
+[stopping_criteria]
+training_pass_rate = 1.0
+test_pass_rate = 1.0
+on_incomplete_convergence = "return_best"
 ```
 
 ### train.jsonl / test.jsonl
@@ -566,7 +567,7 @@ def test_test_feedback_excludes_specific_examples():
 
 def test_sentiment_optimization_reaches_100_percent():
     """End-to-end test with small dataset"""
-    config = load_config("examples/sentiment_analysis/config.yaml")
+    config = load_config("examples/sentiment_analysis/config.toml")
 
     optimizer = PromptOptimizer(config)
     result = optimizer.run()
@@ -581,7 +582,7 @@ def test_sentiment_optimization_reaches_100_percent():
 
 1. **Run on sentiment analysis example:**
    ```bash
-   python -m src.cli.main optimize examples/sentiment_analysis/config.yaml
+   python -m src.cli.main optimize examples/sentiment_analysis/config.toml
    ```
    - Should converge to 100% on both train/test
    - Should complete within 30 iterations

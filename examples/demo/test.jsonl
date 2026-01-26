@@ -1,0 +1,3 @@
+{"input": "Are trees alive?", "expected_output": "yes"}
+{"input": "Can rocks think?", "expected_output": "no"}
+{"input": "Is ice frozen water?", "expected_output": "yes"}

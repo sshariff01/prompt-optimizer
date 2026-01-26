@@ -1,0 +1,26 @@
+{
+  "status": "success",
+  "final_prompt": "Answer the following yes/no question. Respond with ONLY the word 'yes' or 'no' in lowercase. Do not include any punctuation, explanations, or additional text. If the question is ambiguous or cannot be definitively answered, choose the most reasonable interpretation based on common knowledge and scientific consensus.",
+  "iterations": [
+    {
+      "iteration": 0,
+      "prompt": "Answer the following yes/no question. Respond with ONLY the word 'yes' or 'no' in lowercase. Do not include any punctuation, explanations, or additional text. If the question is ambiguous or cannot be definitively answered, choose the most reasonable interpretation based on common knowledge and scientific consensus.",
+      "training_pass_rate": 1.0,
+      "test_pass_rate": null,
+      "feedback": null,
+      "optimizer_tokens_used": 303
+    },
+    {
+      "iteration": 1,
+      "prompt": "Answer the following yes/no question. Respond with ONLY the word 'yes' or 'no' in lowercase. Do not include any punctuation, explanations, or additional text. If the question is ambiguous or cannot be definitively answered, choose the most reasonable interpretation based on common knowledge and scientific consensus.",
+      "training_pass_rate": 1.0,
+      "test_pass_rate": 1.0,
+      "feedback": null,
+      "optimizer_tokens_used": 303
+    }
+  ],
+  "training_pass_rate": 1.0,
+  "test_pass_rate": 1.0,
+  "total_optimizer_tokens": 303,
+  "message": "Successfully reached 100% on both training and test sets! Training: 100.0%, Test: 100.0%"
+}

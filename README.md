@@ -157,6 +157,115 @@ Training and test data should be in JSONL format (one JSON object per line):
 {"input": "Another input", "expected_output": "another result"}
 ```
 
+## Example Demonstration
+
+Here's a real optimization run on a yes/no question answering task:
+
+**Task:** Answer yes/no questions with only 'yes' or 'no' in lowercase
+
+**Training Data** (7 examples):
+```jsonl
+{"input": "Is the sky blue?", "expected_output": "yes"}
+{"input": "Can fish fly?", "expected_output": "no"}
+{"input": "Do humans need water?", "expected_output": "yes"}
+{"input": "Is Mars closer to the Sun than Earth?", "expected_output": "no"}
+{"input": "Does 2 + 2 equal 4?", "expected_output": "yes"}
+{"input": "Are all mammals warm-blooded?", "expected_output": "yes"}
+{"input": "Can plants photosynthesize without light?", "expected_output": "no"}
+```
+
+**Validation Data** (3 examples):
+```jsonl
+{"input": "Are trees alive?", "expected_output": "yes"}
+{"input": "Can rocks think?", "expected_output": "no"}
+{"input": "Is ice frozen water?", "expected_output": "yes"}
+```
+
+### Run Output:
+
+```
+$ prompt-optimizer examples/demo/config.toml
+
+Loading configuration...
+✓ Configuration loaded from examples/demo/config.toml
+
+Loading training data...
+✓ Loaded 7 training cases
+✓ Loaded 3 test cases
+
+Initializing providers...
+✓ Optimizer: claude-opus-4-20250514
+✓ Target model: claude-sonnet-4-20250514
+
+Starting optimization...
+
+======================================================================
+
+Starting optimization with 7 training cases and 3 test cases
+Target model: claude-sonnet-4-20250514
+Optimizer: claude-opus-4-20250514
+
+Iteration 0: Generating initial prompt...
+Initial prompt:
+Answer the following yes/no question. Respond with ONLY the word 'yes' or
+'no' in lowercase. Do not include any punctuation, explanations, or additional
+text. If the question is ambiguous or cannot be definitively answered, choose
+the most reasonable interpretation based on common knowledge and scientific
+consensus.
+
+Initial evaluation: 7/7 passed (100.0%)
+
+======================================================================
+PHASE 1: Training Set Optimization
+======================================================================
+
+✓ Training set: 100% pass rate achieved!
+
+======================================================================
+PHASE 2: Test Set Validation
+======================================================================
+
+Initial test evaluation: 3/3 passed (100.0%)
+
+✓ Test set: 100% pass rate achieved!
+
+======================================================================
+
+Optimization Complete!
+
+╭──────────────────────── Status: success ─────────────────────────╮
+│ Successfully reached 100% on both training and test sets!        │
+│ Training: 100.0%, Test: 100.0%                                   │
+╰──────────────────────────────────────────────────────────────────╯
+
+Metrics:
+  Training Pass Rate: 100.0%
+  Test Pass Rate: 100.0%
+  Total Iterations: 2
+  Optimizer Tokens Used: 303
+
+Final Optimized Prompt:
+╭──────────────────────────────────────────────────────────────────╮
+│ Answer the following yes/no question. Respond with ONLY the word │
+│ 'yes' or 'no' in lowercase. Do not include any punctuation,      │
+│ explanations, or additional text. If the question is ambiguous   │
+│ or cannot be definitively answered, choose the most reasonable   │
+│ interpretation based on common knowledge and scientific consensus.│
+╰──────────────────────────────────────────────────────────────────╯
+
+✓ Results saved to examples/demo/optimization_result.json
+```
+
+### Key Takeaways:
+
+- **Fast Convergence:** The optimizer generated a high-quality prompt on the first try (Iteration 0)
+- **100% Accuracy:** Achieved perfect scores on both training (7/7) and validation (3/3) sets
+- **Efficient:** Used only 303 optimizer tokens (~$0.01 cost)
+- **Two-Phase Validation:** System confirmed success on training, then validated on held-out set
+- **Clear Output:** The final prompt is concise, clear, and ready to use
+
+This demonstrates the system's ability to quickly generate effective zero-shot prompts with minimal iterations.
+
 ## Technology Stack
 
 - **Language:** Python 3.10+

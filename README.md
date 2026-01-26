@@ -86,30 +86,41 @@ pip install -e .
 ## Quick Start
 
 1. **Set your Anthropic API key:**
-```bash
-export ANTHROPIC_API_KEY=your_api_key_here
-```
+
+   **Option A: Using .env file (recommended)**
+   ```bash
+   # Copy the example
+   cp .env.example .env
+
+   # Edit .env and add your key
+   # ANTHROPIC_API_KEY=sk-ant-api03-xxx...your-actual-key
+   ```
+
+   **Option B: Environment variable**
+   ```bash
+   export ANTHROPIC_API_KEY=your_api_key_here
+   ```
 
 2. **Run optimization with the default config:**
-```bash
-prompt-optimizer optimize config.toml
-```
+   ```bash
+   prompt-optimizer config.toml
+   ```
 
-This will optimize a sentiment analysis prompt using the example data in `data/train.jsonl` and `data/test.jsonl`.
+   This will optimize a sentiment analysis prompt using the example data in `data/train.jsonl` and `data/test.jsonl`.
 
 3. **Customize for your task:**
-```bash
-# Copy the default config
-cp config.toml my-task-config.toml
+   ```bash
+   # Copy the default config
+   cp config.toml my-task-config.toml
 
-# Edit my-task-config.toml:
-# - Update task_description
-# - Point to your training/test data files
-# - Adjust model settings if needed
+   # Edit my-task-config.toml:
+   # - Update task_description
+   # - Point to your training/test data files
+   # - Adjust model settings if needed
 
-# Run optimization
-prompt-optimizer optimize my-task-config.toml
-```
+   # Run optimization
+   prompt-optimizer my-task-config.toml
+   ```
 
 ## Configuration
 

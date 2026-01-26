@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 import typer
+from dotenv import load_dotenv
 from rich.console import Console
 from rich.panel import Panel
 from rich.syntax import Syntax
@@ -18,6 +19,9 @@ except ImportError:
 from src.optimizer.models import EvalCase, OptimizationConfig
 from src.orchestrator.optimization_loop import OptimizationLoop
 from src.providers.anthropic import AnthropicProvider
+
+# Load .env file if it exists
+load_dotenv()
 
 app = typer.Typer(help="Prompt Optimizer - Iterative meta-prompt refinement system")
 console = Console()
@@ -33,6 +37,17 @@ def optimize(
 ):
     """Optimize a prompt based on configuration and training data."""
     try:
+        # Check for API key
+        import os
+        if not os.environ.get("ANTHROPIC_API_KEY"):
+            console.print("\n[bold red]Error: ANTHROPIC_API_KEY not found[/bold red]")
+            console.print("\nPlease set your API key using one of these methods:")
+            console.print("1. Create a .env file: cp .env.example .env")
+            console.print("   Then edit .env and add: ANTHROPIC_API_KEY=your_key_here")
+            console.print("2. Export as environment variable:")
+            console.print("   export ANTHROPIC_API_KEY=your_key_here\n")
+            raise typer.Exit(code=1)
+
         # Load configuration
         console.print("\n[bold blue]Loading configuration...[/bold blue]")
         with open(config_path, "rb") as f:

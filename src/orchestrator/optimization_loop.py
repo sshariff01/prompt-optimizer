@@ -502,18 +502,25 @@ class OptimizationLoop:
                     print(f"  \033[91m✗ Rejected (test regression): {previous_test_pass_rate:.1%} → {new_test_pass_rate:.1%}\033[0m")
                     print(f"  Keeping previous prompt")
             else:
-                # All candidates had training regression - reject all
+                # No candidate improved test while maintaining training - reject all
                 results = previous_results
                 current_prompt = previous_prompt
                 test_pass_rate = previous_test_pass_rate
                 training_pass_rate = previous_training_pass_rate
-                print(f"  \033[91m✗ All {num_candidates} candidates caused training regression\033[0m")
-                print(f"  Keeping previous prompt")
 
-                # Store combined feedback for next iteration
-                if training_regression_info is not None:
-                    previous_training_regression = training_regression_info
-                    print(f"  Next iteration will refine with training constraints ({len(training_regression_info[1])} cases)")
+                # Determine why candidates were rejected
+                if had_training_regression:
+                    print(f"  \033[91m✗ No candidate improved test score while maintaining training\033[0m")
+                    print(f"  Keeping previous prompt")
+
+                    # Store combined feedback for next iteration if any had training regression
+                    if training_regression_info is not None:
+                        previous_training_regression = training_regression_info
+                        print(f"  Next iteration will refine with training constraints ({len(training_regression_info[1])} cases)")
+                else:
+                    # All maintained training but none improved test
+                    print(f"  \033[91m✗ No candidate improved test score (all maintained training)\033[0m")
+                    print(f"  Keeping previous prompt")
 
             print(f"  Current test pass rate: {int(test_pass_rate * total_test_cases)}/{total_test_cases} ({test_pass_rate:.1%})\n")
 

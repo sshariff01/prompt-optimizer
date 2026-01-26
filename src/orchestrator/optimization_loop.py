@@ -307,27 +307,11 @@ class OptimizationLoop:
         test_pass_rate, passed, total = self.test_runner.compute_pass_rate(results)
         print(f"Initial test evaluation: {passed}/{total} passed ({test_pass_rate:.1%})\n")
 
-        # Record initial test evaluation
-        self.iteration_history.append(
-            IterationResult(
-                iteration=starting_iteration,
-                prompt=current_prompt,
-                training_pass_rate=training_pass_rate,
-                test_pass_rate=test_pass_rate,
-                optimizer_tokens_used=self.meta_optimizer.get_total_tokens_used(),
-            )
-        )
-
-        # Update prompt history with test score
-        self.prompt_history.add_version(
-            iteration=starting_iteration,
-            prompt=current_prompt,
-            training_score=training_pass_rate,
-            test_score=test_pass_rate,
-        )
+        # Don't record initial test evaluation as a separate iteration
+        # The first refinement iteration will start from starting_iteration
 
         test_iterations = 0
-        iteration = starting_iteration + 1
+        iteration = starting_iteration
 
         # Track training regression from previous iteration
         previous_training_regression = None  # Will store (test_feedback, training_failures)

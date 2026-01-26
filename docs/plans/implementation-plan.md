@@ -90,6 +90,14 @@ Build a prompt optimization system that uses Claude Opus 4.5 to iteratively refi
 - Implements stopping criteria
 - State management and checkpointing
 
+**5. Optimization Memory Component** (`src/optimizer/optimization_memory.py`)
+- Maintains context across iterations to solve memoryless iteration problem
+- Two-tier memory system:
+  - **Accumulated Lessons**: Long-term wisdom about what works/doesn't work
+  - **Recent History**: Detailed summaries of last 3 iterations
+- Provides rich context to meta-optimizer for informed decision-making
+- Prevents repeated mistakes and enables compounding insights
+
 ---
 
 ## Workflow

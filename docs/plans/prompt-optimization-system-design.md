@@ -200,9 +200,94 @@ Think of finding a restaurant:
 
 **Approach 2**: Send 10 people to random restaurants across the city, pick the best 3, spawn 10 new restaurant visits based on "mutations" of what worked. Eventually finds great restaurants, but takes longer and costs more.
 
+## Enhancement: Optimization Memory (Context Preservation)
+
+### Problem: Memoryless Iterations
+
+In the initial implementation of Approach 1, each iteration was effectively independent:
+- ✅ Optimizer sees current prompt and current failures
+- ❌ Optimizer does NOT see previous prompts that were tried
+- ❌ Optimizer does NOT see what changes were made and why
+- ❌ Optimizer does NOT see which approaches worked vs failed
+- ❌ Optimizer does NOT see historical failures that were fixed
+
+**Result:** The meta-optimizer is essentially memoryless between iterations, like having amnesia. It might:
+- Try the same failed approaches repeatedly
+- Undo previous successful fixes
+- Not learn from patterns across iterations
+- Miss compounding insights
+
+### Solution: Hybrid Memory Architecture
+
+We implemented a **two-tier memory system** that provides both short-term and long-term context:
+
+#### 1. Accumulated Lessons (Long-term Memory)
+Maintains a running list of insights extracted from each iteration:
+- `✓ Added explicit format examples → improved performance`
+- `✗ Over-specified edge cases → caused regression`
+
+Provides general principles learned throughout optimization.
+
+#### 2. Recent Iteration History (Short-term Memory)
+Keeps detailed summaries of the last 3 iterations:
+
+```
+Iteration N: ✓ ACCEPTED
+  Change Made: Addressed format_violation, boundary_confusion errors
+  Target Issues: 15 format_violation errors, 5 boundary_confusion errors
+  Result: Training 80% → 90%
+          Fixed 10 failures, improved by 10%
+```
+
+Provides concrete trajectory information showing what was recently attempted.
+
+### Context Integration
+
+On each refinement, the meta-optimizer receives:
+
+```
+Optimization Context:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Accumulated Lessons:
+• ✓ Explicit format examples improve compliance
+• ✗ Over-specifying edge cases causes brittleness
+
+Recent Iteration History:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[Last 3 iterations with details...]
+
+Current Prompt:
+[current prompt]
+
+Training Results: [failures...]
+
+Your task: Build on what worked, avoid what failed, address current issues.
+```
+
+### Benefits
+
+The optimization memory enables:
+- **Learning from mistakes** - Won't repeat rejected approaches
+- **Building on successes** - Knows what patterns worked before
+- **Understanding trajectory** - Sees the optimization journey
+- **Making informed decisions** - Has context to avoid breaking what works
+- **Compounding insights** - Accumulates wisdom across iterations
+
+### Implementation
+
+**Components:**
+- `OptimizationMemory`: Maintains iteration history and lessons
+- `IterationSummary`: Detailed record of each iteration (changes, issues, outcomes)
+- Helper methods to extract issues, describe changes, and generate outcomes
+
+**Token Cost:**
+- ~500-1000 tokens per iteration for context
+- Offset by improved convergence (fewer total iterations needed)
+- Net positive ROI due to better decision-making
+
 ## Recommended Approach
 
-**We recommend Approach 1: Iterative Meta-Prompt Refinement**
+**We recommend Approach 1: Iterative Meta-Prompt Refinement with Optimization Memory**
 
 ### Rationale:
 

@@ -16,6 +16,7 @@ The system iteratively refines prompts until both training and validation sets r
 ## Key Features
 
 - **Iterative Refinement:** Uses advanced LLMs for intelligent meta-prompt engineering
+- **Optimization Memory:** Context-preserving system that maintains lessons learned and iteration history, preventing repeated mistakes and enabling compounding improvements
 - **Model Flexibility:** Provider abstraction design enables easy model swapping
   - Configurable optimizer and target models via TOML config
   - Default: Claude Opus 4.5 (optimizer) + any target model
@@ -29,7 +30,8 @@ The system iteratively refines prompts until both training and validation sets r
 
 **Components:**
 - **Optimizer:** Configurable LLM for meta-prompt engineering
-- **Test Runner:** Executes prompts against evaluation cases
+- **Optimization Memory:** Two-tier context system preserving lessons learned and recent iteration history
+- **Test Runner:** Executes prompts against evaluation cases with parallel execution support
 - **Feedback Analyzer:** Generates rich feedback (full for training, descriptive for test)
 - **Orchestrator:** Controls optimization loop with stopping criteria
 
@@ -410,6 +412,50 @@ TBD
 - **Still optimizing**, just with restricted information to reduce overfitting
 - Iteratively refines prompt based on error patterns
 - Continues until 100% validation pass rate or limits reached
+
+### Optimization Memory: Context Preservation
+
+The system maintains context across iterations to prevent "memoryless" optimization:
+
+**Problem Solved:** Without memory, each iteration is independent - the optimizer can't learn from previous attempts, may repeat failed approaches, or accidentally undo successful fixes.
+
+**Two-Tier Memory Architecture:**
+
+1. **Accumulated Lessons (Long-term Memory)**
+   - Running list of insights extracted from each iteration
+   - Examples: "✓ Added explicit format examples → improved performance" or "✗ Over-specified edge cases → caused regression"
+   - Provides general principles learned throughout optimization
+
+2. **Recent Iteration History (Short-term Memory)**
+   - Detailed summaries of the last 3 iterations
+   - Tracks: changes made, target issues, results, accept/reject decisions
+   - Shows concrete trajectory: what was recently attempted and what worked
+
+**Context Integration:** On each refinement, the meta-optimizer receives:
+```
+Optimization Context:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Accumulated Lessons:
+• ✓ Explicit format examples improve compliance
+• ✗ Over-specifying edge cases causes brittleness
+
+Recent Iteration History:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Iteration 5: ✓ ACCEPTED
+  Change Made: Addressed format_violation errors
+  Training: 80% → 90%
+
+[Current prompt and feedback...]
+```
+
+**Benefits:**
+- Learns from mistakes and avoids repeating rejected approaches
+- Builds on successful patterns discovered in previous iterations
+- Maintains awareness of the optimization trajectory
+- Makes informed decisions to avoid breaking what already works
+- Compounds insights across iterations for faster convergence
+
+**Token Cost:** Adds ~500-1000 tokens per iteration, but improves convergence speed and decision quality, resulting in net positive ROI.
 
 ### Overfitting Reduction Mechanism
 

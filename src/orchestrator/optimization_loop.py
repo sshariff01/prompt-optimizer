@@ -144,8 +144,11 @@ class OptimizationLoop:
             # Generate detailed feedback for failures
             feedback = self.feedback_analyzer.analyze_training_results(results)
 
+            # Get current pass rate for display
+            current_pass_rate, current_passed, current_total = self.test_runner.compute_pass_rate(results)
+
             print(f"\033[94mIteration {iteration}: Refining prompt...\033[0m")
-            print(f"  Pass rate: {passed}/{total} ({pass_rate:.1%})")
+            print(f"  Pass rate: {current_passed}/{current_total} ({current_pass_rate:.1%})")
             print(f"  Failures: {len(feedback.failures)}")
 
             # Save current state before refinement

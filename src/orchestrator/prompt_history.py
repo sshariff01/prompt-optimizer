@@ -61,8 +61,20 @@ class PromptHistory:
         Returns:
             True if the new prompt should be accepted
         """
-        # Accept if improvement or maintaining performance
-        accept = new_score >= current_score
+        # Training phase logic:
+        # - If current score is very low (< 10%), require strict improvement to avoid 0% → 0% loops
+        # - If current score is decent (>= 10%), allow lateral moves to explore different approaches
+        # - This helps break through plateaus at high percentages (e.g., 98% → 98% is OK)
+        if phase == "training":
+            if current_score < 0.1:
+                # Very low score - require improvement to avoid getting stuck at 0%
+                accept = new_score > current_score
+            else:
+                # Decent score - allow lateral moves to explore
+                accept = new_score >= current_score
+        else:
+            # Test phase: allow equal performance (trying different approaches)
+            accept = new_score >= current_score
 
         if accept:
             self.accepted_count += 1

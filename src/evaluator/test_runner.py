@@ -58,6 +58,9 @@ class TestRunner:
         """
         self.target_provider = target_provider
         self.max_workers = max_workers
+        self._cache = {}  # Cache for (prompt, input, system) -> output
+        self.cache_hits = 0
+        self.cache_misses = 0
 
     def run_eval(
         self,
@@ -139,6 +142,24 @@ class TestRunner:
         Returns:
             Evaluation result
         """
+        # Check cache first
+        cache_key = (prompt, case.input, system)
+        if cache_key in self._cache:
+            self.cache_hits += 1
+            actual_output = self._cache[cache_key]
+
+            # Check if output matches expected
+            passed = self._check_match(actual_output, case.expected_output)
+
+            return EvalResult(
+                case=case,
+                actual_output=actual_output,
+                passed=passed,
+                error=None,
+            )
+
+        self.cache_misses += 1
+
         try:
             # Generate the full prompt by combining the instruction prompt
             # with the specific input
@@ -151,6 +172,9 @@ class TestRunner:
                 temperature=0.0,  # Deterministic for evaluation
                 max_tokens=500,
             )
+
+            # Store in cache
+            self._cache[cache_key] = actual_output
 
             # Check if output matches expected
             passed = self._check_match(actual_output, case.expected_output)
@@ -204,3 +228,25 @@ class TestRunner:
         pass_rate = passed / total if total > 0 else 0.0
 
         return pass_rate, passed, total
+
+    def get_cache_stats(self) -> dict:
+        """Get cache statistics.
+
+        Returns:
+            Dictionary with cache statistics
+        """
+        total_requests = self.cache_hits + self.cache_misses
+        hit_rate = self.cache_hits / total_requests if total_requests > 0 else 0.0
+
+        return {
+            "cache_size": len(self._cache),
+            "cache_hits": self.cache_hits,
+            "cache_misses": self.cache_misses,
+            "hit_rate": hit_rate,
+        }
+
+    def clear_cache(self):
+        """Clear the evaluation cache."""
+        self._cache.clear()
+        self.cache_hits = 0
+        self.cache_misses = 0

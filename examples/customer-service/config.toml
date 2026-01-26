@@ -6,7 +6,7 @@ Valid categories: RETURN_REQUEST, TRACKING_INQUIRY, PRODUCT_INQUIRY, BILLING_ISS
 
 [target_model]
 provider = "anthropic"
-model = "claude-sonnet-4-20250514"
+model = "claude-sonnet-4-20250514"  # Using Sonnet for better accuracy on complex tasks
 temperature = 0.0
 max_tokens = 100
 
@@ -16,7 +16,7 @@ max_iterations = 60
 max_optimizer_tokens = 500000
 max_test_iterations = 50
 plateau_threshold = 4
-max_workers = 10  # Number of parallel API calls for evaluation
+max_workers = 50  # Number of parallel API calls for evaluation (increased for speed)
 
 [data]
 training_set = "./examples/customer-service/train.jsonl"

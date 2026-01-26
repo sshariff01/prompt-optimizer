@@ -127,6 +127,14 @@ def optimize(
         console.print(f"  Refinements Accepted: {stats['accepted']}")
         console.print(f"  Refinements Rejected: {stats['rejected']}")
         console.print(f"  Acceptance Rate: {stats['acceptance_rate']:.1%}")
+
+        # Cache statistics
+        cache_stats = optimization_loop.test_runner.get_cache_stats()
+        console.print(f"\n[bold]Evaluation Cache Stats:[/bold]")
+        console.print(f"  Cache Size: {cache_stats['cache_size']} unique evaluations")
+        console.print(f"  Cache Hits: {cache_stats['cache_hits']}")
+        console.print(f"  Cache Misses: {cache_stats['cache_misses']}")
+        console.print(f"  Cache Hit Rate: {cache_stats['hit_rate']:.1%}")
         console.print()
 
         # Final prompt

@@ -6,10 +6,12 @@ An iterative meta-prompt refinement system that uses Claude Opus 4.5 to automati
 
 Prompt Optimizer uses a two-phase optimization workflow to create high-quality zero-shot prompts:
 
-1. **Training Phase:** Optimize prompt with full feedback until 100% training set pass rate
-2. **Test Phase:** Validate on held-out test set with descriptive (non-specific) feedback to avoid overfitting
+1. **Training Phase:** Optimize prompt with full feedback (specific inputs/outputs/diffs) until 100% pass rate
+2. **Validation Phase:** Continue optimizing with descriptive feedback (patterns only, no specific examples) to improve generalization
 
-The system iteratively refines prompts until both training and test sets reach 100% pass rate, or until cost/iteration limits are reached.
+The system iteratively refines prompts until both training and validation sets reach 100% pass rate, or until cost/iteration limits are reached.
+
+**Note:** Both sets are used during optimization. For true out-of-sample evaluation, maintain a separate held-out test set.
 
 ## Key Features
 
@@ -61,7 +63,9 @@ Comprehensive design documentation is available in [`docs/plans/`](docs/plans/):
   - Anti-overfitting mechanism
   - Test set validation with generalization
 
-**MVP Status:** Phase 1 + Phase 2 together form the complete MVP. The system can optimize prompts to 100% on both training and test sets while preventing overfitting.
+**MVP Status:** Phase 1 + Phase 2 together form the complete MVP. The system can optimize prompts to 100% on both training and validation sets while reducing overfitting through limited feedback.
+
+**Important Note:** The "test set" is used during optimization (more accurately called a "validation set" in ML terms). The anti-overfitting mechanism uses descriptive patterns instead of specific examples to reduce (but not eliminate) overfitting. For true out-of-sample evaluation, a separate held-out test set would be needed.
 
 **In Progress:**
 - [ ] Phase 3: Robustness - State management, checkpointing, retry logic
@@ -138,8 +142,8 @@ model = "claude-opus-4.5"     # Model doing the optimization
 max_iterations = 30           # Maximum optimization iterations
 
 [data]
-training_set = "./data/train.jsonl"  # Training examples
-test_set = "./data/test.jsonl"       # Test examples (held-out)
+training_set = "./data/train.jsonl"  # Training examples (full feedback)
+test_set = "./data/test.jsonl"       # Validation examples (limited feedback during optimization)
 ```
 
 See `config.toml` for a complete example with all available options.
@@ -183,15 +187,17 @@ TBD
 - Iteratively refines prompt until 100% training pass rate
 - Uses detailed error categorization and root cause analysis
 
-**Phase 2: Test Validation**
-- Optimizer receives only descriptive feedback (patterns, not examples)
-- Prevents overfitting by hiding specific test cases
-- Iteratively refines prompt to generalize to test set
-- Continues until 100% test pass rate or limits reached
+**Phase 2: Validation with Limited Feedback**
+- Optimizer evaluates on validation set and receives only descriptive feedback (patterns, not examples)
+- **Still optimizing**, just with restricted information to reduce overfitting
+- Iteratively refines prompt based on error patterns
+- Continues until 100% validation pass rate or limits reached
 
-### Anti-Overfitting Mechanism
+### Overfitting Reduction Mechanism
 
-**Training Feedback (Full):**
+The system reduces (but doesn't eliminate) overfitting by providing different feedback types:
+
+**Training Feedback (Full Supervision):**
 ```
 Input: "Product is adequate but overpriced"
 Expected: "neutral"
@@ -200,7 +206,7 @@ Diff: neutral ≠ negative
 Category: boundary_confusion
 ```
 
-**Test Feedback (Descriptive):**
+**Validation Feedback (Weak Supervision):**
 ```
 Error Pattern: boundary_confusion (2 failures)
 Pattern: Ambiguous cases with mixed signals
@@ -209,7 +215,7 @@ Root Cause: Instructions unclear about dominant sentiment
 Fix: Add guidance for weighing conflicting signals
 ```
 
-This ensures the optimizer learns to generalize rather than memorize test cases.
+The validation set is used during optimization with constrained feedback. For true out-of-sample evaluation, maintain a separate held-out test set that is never used during the optimization loop.
 
 ## Contributing
 

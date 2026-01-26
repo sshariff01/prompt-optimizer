@@ -1,5 +1,9 @@
 # Prompt Optimizer Configuration
 # This is the default configuration file for the prompt optimizer
+#
+# Note: The "test_set" is actually used as a validation set during optimization
+# (with limited feedback). For true out-of-sample evaluation, keep a separate
+# held-out test set that is never used during optimization.
 
 task_description = """
 Classify sentiment of product reviews as positive, negative, or neutral.

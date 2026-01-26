@@ -1,3 +1,9 @@
+# Sentiment Analysis Example Configuration
+#
+# Note: The "test_set" is used during optimization with limited feedback
+# to reduce (but not eliminate) overfitting. For true out-of-sample evaluation,
+# maintain a separate held-out test set.
+
 task_description = """
 Classify sentiment of product reviews as positive, negative, or neutral.
 """

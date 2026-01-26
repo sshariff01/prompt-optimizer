@@ -34,6 +34,9 @@ class OptimizerConfig(BaseModel):
     plateau_threshold: int = Field(
         default=7, gt=0, description="Stop if no improvement for N iterations"
     )
+    max_workers: int = Field(
+        default=10, gt=0, description="Maximum parallel API calls for evaluation (default: 10)"
+    )
 
 
 class DataConfig(BaseModel):

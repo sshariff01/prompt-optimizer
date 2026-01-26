@@ -16,6 +16,7 @@ max_iterations = 60
 max_optimizer_tokens = 500000
 max_test_iterations = 50
 plateau_threshold = 4
+max_workers = 10  # Number of parallel API calls for evaluation
 
 [data]
 training_set = "./examples/customer-service/train.jsonl"

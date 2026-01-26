@@ -3,6 +3,7 @@
 import sys
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from src.optimizer.models import EvalCase, EvalResult
 from src.providers.base import LLMProvider
@@ -48,13 +49,15 @@ class Spinner:
 class TestRunner:
     """Executes prompts against evaluation cases."""
 
-    def __init__(self, target_provider: LLMProvider):
+    def __init__(self, target_provider: LLMProvider, max_workers: int = 10):
         """Initialize the test runner.
 
         Args:
             target_provider: LLM provider to test prompts with (e.g., Sonnet)
+            max_workers: Maximum number of parallel API calls (default: 10)
         """
         self.target_provider = target_provider
+        self.max_workers = max_workers
 
     def run_eval(
         self,
@@ -62,7 +65,7 @@ class TestRunner:
         eval_cases: list[EvalCase],
         system: str | None = None,
     ) -> list[EvalResult]:
-        """Run prompt against all eval cases.
+        """Run prompt against all eval cases in parallel.
 
         Args:
             prompt: The prompt to evaluate
@@ -70,60 +73,103 @@ class TestRunner:
             system: Optional system message
 
         Returns:
-            List of evaluation results
+            List of evaluation results (in original order)
         """
-        results = []
         total_cases = len(eval_cases)
+        completed = 0
+        passed_count = 0
+        failed_count = 0
+        lock = threading.Lock()
 
-        for idx, case in enumerate(eval_cases, 1):
-            # Start spinner for this case
-            spinner = Spinner(f"Evaluating case {idx}/{total_cases}")
-            spinner.start()
+        # Progress tracker with spinner
+        progress_message = f"Evaluating: 0/{total_cases} completed (0 passed, 0 failed)"
+        spinner = Spinner(progress_message)
+        spinner.start()
 
-            try:
-                # Generate the full prompt by combining the instruction prompt
-                # with the specific input
-                full_prompt = f"{prompt}\n\nInput: {case.input}"
+        def update_progress():
+            """Update the spinner message with current progress."""
+            nonlocal progress_message
+            progress_message = f"Evaluating: {completed}/{total_cases} completed ({passed_count} passed, {failed_count} failed)"
+            spinner.message = progress_message
 
-                # Generate output using target model
-                actual_output = self.target_provider.generate(
-                    prompt=full_prompt,
-                    system=system,
-                    temperature=0.0,  # Deterministic for evaluation
-                    max_tokens=500,
-                )
+        # Store results with their original index
+        results_dict = {}
 
-                # Check if output matches expected
-                passed = self._check_match(actual_output, case.expected_output)
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            # Submit all tasks
+            future_to_idx = {
+                executor.submit(self._evaluate_single_case, prompt, case, system): idx
+                for idx, case in enumerate(eval_cases)
+            }
 
-                # Stop spinner and show result
-                status = "✓" if passed else "✗"
-                spinner.stop(f"  {status} Case {idx}/{total_cases}")
+            # Process completed tasks
+            for future in as_completed(future_to_idx):
+                idx = future_to_idx[future]
+                result = future.result()
+                results_dict[idx] = result
 
-                results.append(
-                    EvalResult(
-                        case=case,
-                        actual_output=actual_output,
-                        passed=passed,
-                        error=None,
-                    )
-                )
+                # Update counters
+                with lock:
+                    completed += 1
+                    if result.passed:
+                        passed_count += 1
+                    else:
+                        failed_count += 1
+                    update_progress()
 
-            except Exception as e:
-                # Stop spinner and show error
-                spinner.stop(f"  ✗ Case {idx}/{total_cases} (error)")
+        # Stop spinner and show final results
+        spinner.stop(f"  Completed: {total_cases}/{total_cases} ({passed_count} passed, {failed_count} failed)")
 
-                # Handle errors during execution
-                results.append(
-                    EvalResult(
-                        case=case,
-                        actual_output="",
-                        passed=False,
-                        error=str(e),
-                    )
-                )
+        # Return results in original order
+        return [results_dict[i] for i in range(len(eval_cases))]
 
-        return results
+    def _evaluate_single_case(
+        self,
+        prompt: str,
+        case: EvalCase,
+        system: str | None = None,
+    ) -> EvalResult:
+        """Evaluate a single case (used for parallel execution).
+
+        Args:
+            prompt: The prompt to evaluate
+            case: The evaluation case
+            system: Optional system message
+
+        Returns:
+            Evaluation result
+        """
+        try:
+            # Generate the full prompt by combining the instruction prompt
+            # with the specific input
+            full_prompt = f"{prompt}\n\nInput: {case.input}"
+
+            # Generate output using target model
+            actual_output = self.target_provider.generate(
+                prompt=full_prompt,
+                system=system,
+                temperature=0.0,  # Deterministic for evaluation
+                max_tokens=500,
+            )
+
+            # Check if output matches expected
+            passed = self._check_match(actual_output, case.expected_output)
+
+            return EvalResult(
+                case=case,
+                actual_output=actual_output,
+                passed=passed,
+                error=None,
+            )
+
+        except Exception as e:
+            # Handle errors during execution
+            return EvalResult(
+                case=case,
+                actual_output="",
+                passed=False,
+                error=str(e),
+            )
 
     def _check_match(self, actual: str, expected: str) -> bool:
         """Check if actual output matches expected output.

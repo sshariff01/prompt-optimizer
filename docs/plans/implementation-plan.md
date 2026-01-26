@@ -384,6 +384,801 @@ on_incomplete_convergence = "return_best"
 
 ---
 
+## Phase Completion Diagrams
+
+This section shows the system architecture and component interactions after completing each phase.
+
+### Phase 1: Core Loop (MVP) - System Architecture
+
+**Component Interaction Diagram:**
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                              CLI                                     │
+│  - Load config.toml                                                  │
+│  - Load training data (JSONL)                                        │
+│  - Display results                                                   │
+└────────────────┬────────────────────────────────────────────────────┘
+                 │
+                 │ Calls
+                 ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                    OptimizationLoop                                  │
+│  - Orchestrates training optimization                                │
+│  - Manages iteration loop                                            │
+│  - Checks stopping criteria                                          │
+└─────┬──────────────────┬──────────────────┬─────────────────────────┘
+      │                  │                  │
+      │ Uses             │ Uses             │ Uses
+      ▼                  ▼                  ▼
+┌──────────────┐   ┌──────────────┐   ┌──────────────────┐
+│MetaOptimizer │   │  TestRunner  │   │FeedbackAnalyzer  │
+│              │   │              │   │                  │
+│- Generate    │   │- Execute     │   │- Compute metrics │
+│  initial     │   │  prompt      │   │- Generate diffs  │
+│  prompt      │   │- Return      │   │- Categorize      │
+│- Refine      │   │  pass/fail   │   │  errors          │
+│  based on    │   │              │   │                  │
+│  feedback    │   │              │   │                  │
+└──────┬───────┘   └──────┬───────┘   └──────────────────┘
+       │                  │
+       │ Uses             │ Uses
+       ▼                  ▼
+┌──────────────────────────────────┐
+│       LLMProvider (interface)    │
+│                                  │
+│  ┌─────────────────────────┐    │
+│  │  AnthropicProvider      │    │
+│  │  - generate()           │    │
+│  │  - count_tokens()       │    │
+│  └─────────────────────────┘    │
+└──────────────────────────────────┘
+```
+
+**Data Flow:**
+
+```
+┌──────────────┐
+│config.toml + │
+│train.jsonl   │
+└──────┬───────┘
+       │
+       ▼
+┌─────────────────────────────────────────────────────────────┐
+│ ITERATION 0: Generate Initial Prompt                        │
+│                                                              │
+│  User Config ──> MetaOptimizer (Opus) ──> Initial Prompt    │
+│  + Examples                                                  │
+└──────────────────────┬──────────────────────────────────────┘
+                       │
+                       ▼
+┌─────────────────────────────────────────────────────────────┐
+│ ITERATION N: Evaluation & Refinement Loop                   │
+│                                                              │
+│  Current Prompt ──> TestRunner (Target Model)               │
+│                          │                                   │
+│                          ▼                                   │
+│                    [EvalResult, EvalResult, ...]            │
+│                          │                                   │
+│                          ▼                                   │
+│                  FeedbackAnalyzer                            │
+│                          │                                   │
+│                          ▼                                   │
+│                  DetailedFeedback {                          │
+│                    pass_rate: 0.75                           │
+│                    failures: [                               │
+│                      {input, expected, actual, diff,         │
+│                       category, analysis}                    │
+│                    ]                                         │
+│                  }                                           │
+│                          │                                   │
+│                          ▼                                   │
+│  Feedback ──> MetaOptimizer (Opus) ──> Refined Prompt       │
+│                                                              │
+└──────────────────────┬──────────────────────────────────────┘
+                       │
+                       │ Loop until:
+                       │ - Training pass_rate = 100%
+                       │ - OR max_iterations reached
+                       │ - OR plateau detected
+                       │
+                       ▼
+┌─────────────────────────────────────────────────────────────┐
+│ RESULT                                                       │
+│                                                              │
+│  OptimizationResult {                                        │
+│    status: "success" | "max_iterations" | "plateau"         │
+│    final_prompt: "..."                                       │
+│    training_pass_rate: 1.0                                   │
+│    iterations: [...]                                         │
+│    total_optimizer_tokens: 456234                            │
+│  }                                                           │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Key Capabilities:**
+- Training set optimization with full feedback (inputs, outputs, diffs)
+- Iterative refinement until 100% or limits hit
+- Basic stopping criteria (max iterations, plateau)
+
+**What's NOT Included:**
+- ❌ Test set validation (Phase 2)
+- ❌ Descriptive feedback for test set (Phase 2)
+- ❌ State persistence/checkpointing (Phase 3)
+- ❌ API retry logic (Phase 3)
+
+---
+
+### Phase 2: Rich Feedback - Two-Phase Optimization
+
+**System Architecture Changes:**
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    OptimizationLoop (Enhanced)                       │
+│                                                                      │
+│  ┌───────────────────────────────────────────────────────────────┐ │
+│  │ PHASE 1: Training Optimization                                │ │
+│  │                                                                │ │
+│  │  While training_pass_rate < 100%:                             │ │
+│  │    1. Evaluate on training_cases                              │ │
+│  │    2. Generate DetailedFeedback (FULL)                        │ │
+│  │    3. Refine prompt                                           │ │
+│  │                                                                │ │
+│  │  DetailedFeedback = FeedbackAnalyzer.analyze_training()       │ │
+│  │    ├─ Show actual inputs/outputs                              │ │
+│  │    ├─ Show character-level diffs                              │ │
+│  │    ├─ Categorize each error                                   │ │
+│  │    └─ Root cause analysis                                     │ │
+│  └───────────────────────────────────────────────────────────────┘ │
+│                                                                      │
+│  ┌───────────────────────────────────────────────────────────────┐ │
+│  │ PHASE 2: Test Set Validation (NEW)                           │ │
+│  │                                                                │ │
+│  │  While test_pass_rate < 100% AND iterations < max:            │ │
+│  │    1. Evaluate on test_cases                                  │ │
+│  │    2. Generate DescriptiveFeedback (PATTERNS ONLY)            │ │
+│  │    3. Refine prompt to generalize                             │ │
+│  │                                                                │ │
+│  │  DescriptiveFeedback = FeedbackAnalyzer.analyze_test()        │ │
+│  │    ├─ Group failures by error_category                        │ │
+│  │    ├─ Extract common patterns (NO specifics)                  │ │
+│  │    ├─ Generate generic examples                               │ │
+│  │    ├─ Hypothesize root causes                                 │ │
+│  │    └─ Recommend fixes                                         │ │
+│  └───────────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+**Data Flow Comparison:**
+
+```
+TRAINING SET FEEDBACK (Full Details):
+────────────────────────────────────────────────────────────────
+Failures ──> FeedbackAnalyzer.analyze_training_results()
+                      │
+                      ▼
+           For each failure:
+             ├─ Extract actual input: "Product is adequate but overpriced"
+             ├─ Extract expected: "neutral"
+             ├─ Extract actual: "negative"
+             ├─ Generate diff: "neutral" ≠ "negative"
+             ├─ Categorize: ErrorCategory.BOUNDARY_CONFUSION
+             └─ Analyze: "Mixed sentiment incorrectly classified..."
+                      │
+                      ▼
+            DetailedFeedback {
+              failures: [
+                {case, actual_output, diff, error_category, analysis}
+              ]
+            }
+                      │
+                      ▼
+            MetaOptimizer.refine_prompt_training()
+              ├─ Sees ALL failure details
+              ├─ Can pattern-match across examples
+              └─ Generates targeted fix
+
+
+TEST SET FEEDBACK (Descriptive Patterns):
+────────────────────────────────────────────────────────────────
+Failures ──> FeedbackAnalyzer.analyze_test_results()
+                      │
+                      ▼
+           Group by error_category:
+             ├─ BOUNDARY_CONFUSION: [failure1, failure2]
+             └─ FORMAT_VIOLATION: [failure3]
+                      │
+                      ▼
+           For each category:
+             ├─ Extract PATTERN (not specifics)
+             │    "Ambiguous cases with mixed signals"
+             ├─ Create GENERIC example
+             │    "Inputs with both positive and negative aspects"
+             ├─ Hypothesize ROOT CAUSE
+             │    "Instructions unclear about dominant sentiment"
+             └─ Recommend FIX
+                  "Add guidance for weighing conflicting signals"
+                      │
+                      ▼
+            DescriptiveFeedback {
+              error_patterns: [
+                {error_type, count, pattern_observed,
+                 example_pattern, root_cause, recommended_fix}
+              ]
+            }
+                      │
+                      ▼
+            MetaOptimizer.refine_prompt_test()
+              ├─ Sees PATTERNS only (no actual test cases)
+              ├─ Must generalize (can't memorize)
+              └─ Generates robustness fix
+```
+
+**Key Architecture Changes:**
+1. **FeedbackAnalyzer** now has two modes:
+   - `analyze_training_results()` → DetailedFeedback (full)
+   - `analyze_test_results()` → DescriptiveFeedback (patterns)
+
+2. **MetaOptimizer** now has two refinement methods:
+   - `refine_prompt_training()` → Uses REFINEMENT_PROMPT_TRAINING template
+   - `refine_prompt_test()` → Uses REFINEMENT_PROMPT_TEST template
+
+3. **OptimizationLoop** now has two-phase workflow:
+   - Phase 1: Optimize on training set (full feedback)
+   - Phase 2: Validate on test set (descriptive feedback)
+
+**Anti-Overfitting Mechanism:**
+
+```
+Training Feedback: Shows actual test case
+  ❌ "Input: 'Love it!' Expected: 'positive' Got: 'positive - satisfied'"
+     → Optimizer could memorize this specific case
+
+Test Feedback: Shows pattern only
+  ✅ "Pattern: Output included explanatory text beyond label"
+  ✅ "Example: Instead of 'X', output was 'X - explanation'"
+  ✅ "Fix: Emphasize outputting ONLY the classification label"
+     → Optimizer must generalize the fix
+```
+
+**What's Still NOT Included:**
+- ❌ State persistence/checkpointing (Phase 3)
+- ❌ API retry logic (Phase 3)
+- ❌ Token budget enforcement (Phase 3)
+- ❌ Rich CLI with progress bars (Phase 4)
+
+---
+
+### Phase 3: Robustness - State Management & Error Handling
+
+**System Architecture Additions:**
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    OptimizationLoop (Production-Ready)               │
+│                                                                      │
+│  ┌───────────────────────────────────────────────────────────────┐ │
+│  │ NEW: StateManager Integration                                 │ │
+│  │                                                                │ │
+│  │  After each iteration:                                        │ │
+│  │    StateManager.save_checkpoint({                             │ │
+│  │      iteration: N,                                            │ │
+│  │      prompt: current_prompt,                                  │ │
+│  │      history: iteration_history,                              │ │
+│  │      metrics: {training_pass_rate, test_pass_rate, tokens}    │ │
+│  │    })                                                         │ │
+│  │                                                                │ │
+│  │  On resume:                                                   │ │
+│  │    state = StateManager.load_checkpoint()                     │ │
+│  │    current_prompt = state.prompt                              │ │
+│  │    iteration = state.iteration + 1                            │ │
+│  └───────────────────────────────────────────────────────────────┘ │
+│                                                                      │
+│  ┌───────────────────────────────────────────────────────────────┐ │
+│  │ NEW: StoppingCriteria Integration                            │ │
+│  │                                                                │ │
+│  │  Before each iteration:                                       │ │
+│  │    should_stop, reason = StoppingCriteria.check({             │ │
+│  │      iteration_count,                                         │ │
+│  │      optimizer_tokens,                                        │ │
+│  │      training_pass_rate,                                      │ │
+│  │      test_pass_rate,                                          │ │
+│  │      history                                                  │ │
+│  │    })                                                         │ │
+│  │                                                                │ │
+│  │  Checks:                                                      │ │
+│  │    ✓ Success: train=100% AND test=100%                        │ │
+│  │    ✓ Max iterations: count >= 30                              │ │
+│  │    ✓ Token budget: tokens >= 1M                               │ │
+│  │    ✓ Plateau: no improvement for 7 iterations                 │ │
+│  │    ✓ Test limit: test_iterations >= 15                        │ │
+│  └───────────────────────────────────────────────────────────────┘ │
+│                                                                      │
+│  ┌───────────────────────────────────────────────────────────────┐ │
+│  │ NEW: Error Handling & Retries                                │ │
+│  │                                                                │ │
+│  │  All LLM calls wrapped with:                                  │ │
+│  │    try:                                                       │ │
+│  │      response = provider.generate(...)                        │ │
+│  │    except anthropic.RateLimitError:                           │ │
+│  │      → Exponential backoff retry (3 attempts)                 │ │
+│  │    except anthropic.APIError:                                 │ │
+│  │      → Log error, retry with backoff                          │ │
+│  │    except Exception:                                          │ │
+│  │      → Save checkpoint, return best result so far             │ │
+│  └───────────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+**State Management Flow:**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ OPTIMIZATION START                                              │
+└────┬────────────────────────────────────────────────────────────┘
+     │
+     ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ StateManager.check_existing_checkpoint()                        │
+│   ├─ If exists: Load and resume                                 │
+│   └─ If not: Start fresh                                        │
+└────┬────────────────────────────────────────────────────────────┘
+     │
+     ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ ITERATION LOOP                                                  │
+│                                                                 │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │ Iteration N                                              │  │
+│  │   1. Check stopping criteria                             │  │
+│  │   2. Run evaluation (with retry logic)                   │  │
+│  │   3. Generate feedback                                   │  │
+│  │   4. Refine prompt (with retry logic)                    │  │
+│  │   5. Save checkpoint ──────────────┐                     │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│                                         │                       │
+└─────────────────────────────────────────┼───────────────────────┘
+                                          │
+                                          ▼
+                              ┌─────────────────────────┐
+                              │ checkpoint.json         │
+                              │ {                       │
+                              │   iteration: N,         │
+                              │   prompt: "...",        │
+                              │   history: [...],       │
+                              │   config: {...},        │
+                              │   metrics: {...}        │
+                              │ }                       │
+                              └─────────────────────────┘
+                                          │
+                      ┌───────────────────┼───────────────────┐
+                      │                   │                   │
+                      ▼                   ▼                   ▼
+              ┌──────────────┐    ┌──────────────┐   ┌──────────────┐
+              │ User Ctrl+C  │    │ API Failure  │   │ Crash/Error  │
+              └──────────────┘    └──────────────┘   └──────────────┘
+                      │                   │                   │
+                      └───────────────────┴───────────────────┘
+                                          │
+                                          ▼
+                              ┌─────────────────────────┐
+                              │ Resume Command          │
+                              │ prompt-optimizer resume │
+                              │   checkpoint.json       │
+                              └─────────────────────────┘
+```
+
+**Stopping Criteria Decision Tree:**
+
+```
+                    ┌──────────────────┐
+                    │ Check Stopping   │
+                    │ Criteria         │
+                    └────────┬─────────┘
+                             │
+                ┌────────────┼────────────┐
+                │            │            │
+        ┌───────▼───────┐    │    ┌───────▼───────┐
+        │ Training=100% │    │    │ Training<100% │
+        │ Test=100%     │    │    │               │
+        └───────┬───────┘    │    └───────┬───────┘
+                │            │            │
+                ▼            │            ▼
+        ┌──────────────┐     │    ┌──────────────────┐
+        │   SUCCESS    │     │    │ Check Hard Limits│
+        │   ✓ Return   │     │    └────────┬─────────┘
+        └──────────────┘     │             │
+                             │    ┌────────┴─────────┐
+                             │    │                  │
+                             │    ▼                  ▼
+                             │ ┌───────────┐  ┌────────────┐
+                             │ │Iterations │  │   Tokens   │
+                             │ │  >= 30?   │  │  >= 1M?    │
+                             │ └─────┬─────┘  └──────┬─────┘
+                             │       │ Yes           │ Yes
+                             │       ▼               ▼
+                             │ ┌──────────────────────────┐
+                             │ │  INCOMPLETE CONVERGENCE  │
+                             │ │  Return best prompt +    │
+                             │ │  diagnostics             │
+                             │ └──────────────────────────┘
+                             │
+                             └──> Continue Loop
+```
+
+**Error Handling Architecture:**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ LLM Call with Retry Logic                                      │
+│                                                                 │
+│  def generate_with_retry(prompt, max_retries=3):               │
+│    for attempt in range(max_retries):                          │
+│      try:                                                       │
+│        return provider.generate(prompt)                         │
+│      except RateLimitError:                                     │
+│        wait_time = 2 ** attempt  # Exponential backoff         │
+│        sleep(wait_time)                                         │
+│      except APIError as e:                                      │
+│        if attempt == max_retries - 1:                           │
+│          # Save checkpoint and exit gracefully                  │
+│          StateManager.save_checkpoint(current_state)            │
+│          raise OptimizationError(f"API failed: {e}")            │
+│      except Exception as e:                                     │
+│        # Unexpected error - save state                          │
+│        StateManager.save_checkpoint(current_state)              │
+│        raise                                                    │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Key Features:**
+- Automatic checkpointing after each iteration
+- Resume capability for interrupted runs
+- Comprehensive stopping criteria (success, limits, plateau)
+- API retry logic with exponential backoff
+- Graceful error handling - always returns best result
+
+**What's Still NOT Included:**
+- ❌ Rich terminal UI with progress bars (Phase 4)
+- ❌ Config validation with helpful errors (Phase 4)
+- ❌ Multiple working examples (Phase 4)
+
+---
+
+### Phase 4: Polish - User Experience Enhancements
+
+**CLI Architecture Enhancements:**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    CLI with Rich Output                         │
+│                                                                 │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │ Command: optimize                                        │  │
+│  │                                                          │  │
+│  │  ┌─────────────────────────────────────────────┐        │  │
+│  │  │ 1. Config Validation (Enhanced)             │        │  │
+│  │  │   - Pydantic validation with custom messages│        │  │
+│  │  │   - Check file paths exist                  │        │  │
+│  │  │   - Validate model names                    │        │  │
+│  │  │   - Range checks on parameters              │        │  │
+│  │  │                                             │        │  │
+│  │  │   If invalid:                               │        │  │
+│  │  │   ┌─────────────────────────────────────┐   │        │  │
+│  │  │   │ ❌ Configuration Error              │   │        │  │
+│  │  │   │                                     │   │        │  │
+│  │  │   │ Invalid value for max_iterations:  │   │        │  │
+│  │  │   │   Got: -5                          │   │        │  │
+│  │  │   │   Expected: positive integer       │   │        │  │
+│  │  │   │                                     │   │        │  │
+│  │  │   │ Fix: Set max_iterations >= 1       │   │        │  │
+│  │  │   └─────────────────────────────────────┘   │        │  │
+│  │  └─────────────────────────────────────────────┘        │  │
+│  │                                                          │  │
+│  │  ┌─────────────────────────────────────────────┐        │  │
+│  │  │ 2. Rich Progress Display                    │        │  │
+│  │  │                                             │        │  │
+│  │  │   Using Rich library:                       │        │  │
+│  │  │   - Live progress bars                      │        │  │
+│  │  │   - Colored status (green/yellow/red)       │        │  │
+│  │  │   - Real-time metric updates                │        │  │
+│  │  │   - Syntax-highlighted prompt display       │        │  │
+│  │  └─────────────────────────────────────────────┘        │  │
+│  │                                                          │  │
+│  │  ┌─────────────────────────────────────────────┐        │  │
+│  │  │ 3. Results Display                          │        │  │
+│  │  │   - Panels for status/metrics               │        │  │
+│  │  │   - Tables for iteration history            │        │  │
+│  │  │   - Syntax highlighting for final prompt    │        │  │
+│  │  └─────────────────────────────────────────────┘        │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│                                                                 │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │ Command: resume (NEW)                                    │  │
+│  │   - Load checkpoint.json                                 │  │
+│  │   - Display current progress                             │  │
+│  │   - Continue optimization with rich UI                   │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│                                                                 │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │ Command: analyze (NEW)                                   │  │
+│  │   - Load optimization_result.json                        │  │
+│  │   - Display iteration history table                      │  │
+│  │   - Show convergence graph (ASCII)                       │  │
+│  │   - Highlight best iteration                             │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│                                                                 │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │ Command: validate (NEW)                                  │  │
+│  │   - Load and validate config.toml                        │  │
+│  │   - Check all referenced files exist                     │  │
+│  │   - Verify API credentials                               │  │
+│  │   - Display validation report                            │  │
+│  └──────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Terminal Output Example:**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ Prompt Optimizer - Starting Optimization                        │
+└─────────────────────────────────────────────────────────────────┘
+
+✓ Configuration loaded from config.toml
+✓ Loaded 20 training cases, 10 test cases
+✓ Optimizer: claude-opus-4.5
+✓ Target model: claude-sonnet-4.5
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Phase 1: Training Set Optimization
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Iteration 0: Generating initial prompt
+  Training: ███████████░░░░░░░░░ 60% (12/20)
+
+Iteration 1: Refining prompt
+  Training: █████████████████░░░ 85% (17/20)
+  Failures: boundary_confusion (3)
+
+Iteration 2: Refining prompt
+  Training: ████████████████████ 100% (20/20) ✓
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Phase 2: Test Set Validation
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Iteration 3: Validating on test set
+  Training: ████████████████████ 100% (20/20) ✓
+  Test:     ████████████████░░░░ 80% (8/10)
+  Tokens:   145,234 / 1,000,000
+
+Iteration 4: Refining based on test patterns
+  Training: ████████████████████ 100% (20/20) ✓
+  Test:     ██████████████████░░ 90% (9/10)
+  Tokens:   178,456 / 1,000,000
+
+Iteration 5: Refining based on test patterns
+  Training: ████████████████████ 100% (20/20) ✓
+  Test:     ████████████████████ 100% (10/10) ✓
+  Tokens:   203,567 / 1,000,000
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+┌─────────────────────────────────────────────────────────────────┐
+│ ✓ Optimization Complete!                                        │
+│                                                                 │
+│ Status: SUCCESS                                                 │
+│ Training: 100% (20/20)                                          │
+│ Test: 100% (10/10)                                              │
+│ Iterations: 5                                                   │
+│ Tokens: 203,567                                                 │
+│ Estimated Cost: $6.11                                           │
+└─────────────────────────────────────────────────────────────────┘
+
+Final Optimized Prompt:
+┌─────────────────────────────────────────────────────────────────┐
+│ Classify the sentiment of the following product review as      │
+│ positive, negative, or neutral.                                 │
+│                                                                 │
+│ Guidelines:                                                     │
+│ - Positive: Overall satisfaction, would recommend               │
+│ - Negative: Dissatisfaction, problems, would not recommend      │
+│ - Neutral: Mixed feelings, adequate but unremarkable            │
+│                                                                 │
+│ For mixed sentiments, determine which aspect dominates.         │
+│ Pay attention to sarcasm - context overrides literal words.     │
+│                                                                 │
+│ Output ONLY the sentiment label in lowercase.                   │
+└─────────────────────────────────────────────────────────────────┘
+
+✓ Results saved to optimization_result.json
+```
+
+**Enhanced Validation:**
+
+```python
+# Config validation with helpful messages
+class OptimizationConfig(BaseSettings):
+    """Configuration with enhanced validation."""
+
+    @validator('max_iterations')
+    def validate_max_iterations(cls, v):
+        if v <= 0:
+            raise ValueError(
+                f"max_iterations must be positive (got {v}). "
+                "Set to a value like 10, 20, or 30."
+            )
+        if v > 100:
+            warnings.warn(
+                f"max_iterations={v} is very high. "
+                "Consider starting with 20-30 to control costs."
+            )
+        return v
+
+    @validator('training_set')
+    def validate_training_set(cls, v):
+        if not v.exists():
+            raise ValueError(
+                f"Training set not found: {v}\n"
+                "Ensure the path is correct and the file exists."
+            )
+        return v
+```
+
+**Key Features:**
+- Rich terminal UI with progress bars and color
+- Comprehensive config validation with helpful messages
+- Multiple CLI commands (optimize, resume, analyze, validate)
+- Beautiful results display with syntax highlighting
+- Real-time cost tracking
+- Iteration history visualization
+
+**Complete System:**
+Phase 1-4 together provide a production-ready prompt optimization system with excellent developer experience.
+
+---
+
+### Complete System Architecture (After Phase 1-4)
+
+**Full Component Interaction Diagram:**
+
+```
+                        ┌─────────────────────┐
+                        │       CLI           │
+                        │  - Load config      │
+                        │  - Rich UI          │
+                        │  - Commands         │
+                        └──────────┬──────────┘
+                                   │
+                                   ▼
+                    ┌──────────────────────────┐
+                    │  OptimizationLoop        │
+                    │  - Two-phase workflow    │
+                    │  - State management      │
+                    │  - Stopping criteria     │
+                    └─┬──────────────────────┬─┘
+                      │                      │
+          ┌───────────┼──────────────────────┼───────────┐
+          │           │                      │           │
+          ▼           ▼                      ▼           ▼
+    ┌──────────┐ ┌─────────┐        ┌──────────┐ ┌────────────┐
+    │ Meta     │ │  Test   │        │Feedback  │ │   State    │
+    │Optimizer │ │ Runner  │        │Analyzer  │ │  Manager   │
+    └────┬─────┘ └────┬────┘        └────┬─────┘ └─────┬──────┘
+         │            │                  │              │
+         │            │                  │              │
+         ▼            ▼                  │              ▼
+    ┌─────────────────────┐             │     ┌──────────────┐
+    │   LLMProvider       │             │     │checkpoint.   │
+    │   - Anthropic       │             │     │json          │
+    │   - (OpenAI future) │             │     └──────────────┘
+    └─────────────────────┘             │
+                                        ▼
+                            ┌─────────────────────┐
+                            │ Feedback Types:     │
+                            │ - DetailedFeedback  │
+                            │ - DescriptiveFeedback│
+                            └─────────────────────┘
+
+Data Flow:
+  config.toml ──┐
+  train.jsonl ──┼──> CLI ──> OptimizationLoop ──> Result
+  test.jsonl  ──┘                │
+                                 └──> checkpoint.json (auto-save)
+```
+
+**End-to-End Flow:**
+
+```
+User Input
+    │
+    ▼
+┌────────────────────────────────────────────────────────────┐
+│ 1. CLI: Load & Validate                                    │
+│    - Parse config.toml                                     │
+│    - Validate all settings                                 │
+│    - Load training/test JSONL                              │
+│    - Initialize providers                                  │
+└────────────────────┬───────────────────────────────────────┘
+                     │
+                     ▼
+┌────────────────────────────────────────────────────────────┐
+│ 2. Phase 1: Training Optimization                          │
+│    ┌──────────────────────────────────────────────────┐   │
+│    │ Iteration 0: Generate initial prompt             │   │
+│    └──────────────────────────────────────────────────┘   │
+│    ┌──────────────────────────────────────────────────┐   │
+│    │ Loop until training = 100%:                      │   │
+│    │   → Evaluate on training set                     │   │
+│    │   → Generate DetailedFeedback                    │   │
+│    │   → Refine prompt (show all failure details)    │   │
+│    │   → Save checkpoint                              │   │
+│    │   → Check stopping criteria                      │   │
+│    └──────────────────────────────────────────────────┘   │
+└────────────────────┬───────────────────────────────────────┘
+                     │
+                     ▼
+┌────────────────────────────────────────────────────────────┐
+│ 3. Phase 2: Test Validation                                │
+│    ┌──────────────────────────────────────────────────┐   │
+│    │ Loop until test = 100% OR limits:                │   │
+│    │   → Evaluate on test set                         │   │
+│    │   → Generate DescriptiveFeedback (patterns)     │   │
+│    │   → Refine prompt (generalize, don't overfit)   │   │
+│    │   → Save checkpoint                              │   │
+│    │   → Check stopping criteria                      │   │
+│    └──────────────────────────────────────────────────┘   │
+└────────────────────┬───────────────────────────────────────┘
+                     │
+                     ▼
+┌────────────────────────────────────────────────────────────┐
+│ 4. Return Result                                           │
+│    - Status: success/max_iterations/plateau/token_limit    │
+│    - Final prompt                                          │
+│    - Iteration history                                     │
+│    - Metrics (pass rates, tokens, cost)                    │
+│    - Save to optimization_result.json                      │
+└────────────────────┬───────────────────────────────────────┘
+                     │
+                     ▼
+              Rich CLI Output
+         (with progress, colors, tables)
+```
+
+---
+
+### Phase 5: LangSmith Integration (Future)
+
+**New Components:**
+```
+src/
+├── observability/
+│   ├── langsmith_client.py  ✅ LangSmith integration
+│   └── tracing.py           ✅ Automatic tracing wrapper
+└── providers/
+    ├── anthropic.py         ✅ Enhanced: Wrapped for tracing
+    └── openai.py            ✅ Enhanced: Wrapped for tracing
+```
+
+**New Capabilities:**
+- ✅ Automatic tracing of all LLM calls to LangSmith
+- ✅ Dataset logging (training/test sets uploaded)
+- ✅ Eval result tracking in LangSmith UI
+- ✅ Prompt version comparison
+- ✅ Cost analytics dashboard
+- ✅ Optional: Disable for users without LangSmith
+
+**Configuration:**
+```toml
+[observability]
+langsmith_enabled = true
+langsmith_project = "prompt-optimization"
+```
+
+---
+
 ## Critical Files to Create
 
 ### Priority 1 (Phase 1 - MVP)

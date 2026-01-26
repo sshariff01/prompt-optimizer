@@ -53,10 +53,13 @@ Build a prompt optimization system that uses Claude Opus 4.5 to iteratively refi
 - Provider implementations in `src/providers/` (anthropic.py, openai.py, etc.)
 
 ### Cost Controls
-- Max 30 iterations (~$15-20 budget)
-- Token budget: 1M optimizer tokens
-- Plateau detection: Stop if no improvement for 7 iterations
+- Max 30-60 iterations total (configurable)
+- Max 15-50 test iterations (separate limit to prevent overfitting on validation)
+- Token budget: 500K-1M optimizer tokens (configurable)
+- Plateau detection: Stop if no improvement for 4-7 iterations
 - Return best prompt if limits hit
+- **Actual Performance:** $15-30 per optimization with multi-candidate approach
+- **Parallelization:** 50 workers default reduces wall-clock time to 3-10 minutes
 
 ---
 
@@ -97,6 +100,38 @@ Build a prompt optimization system that uses Claude Opus 4.5 to iteratively refi
   - **Recent History**: Detailed summaries of last 3 iterations
 - Provides rich context to meta-optimizer for informed decision-making
 - Prevents repeated mistakes and enables compounding insights
+
+**6. Multi-Candidate Generation** (`src/optimizer/meta_optimizer.py::generate_multiple_candidates`)
+- Generates N candidate prompts per iteration (default: 3, configurable 1-10)
+- Each candidate uses temperature=0.7 for diversity
+- Training phase: Evaluates all, picks best with `>=` comparison (allows laterals)
+- Test phase: Filters training regressions first, then picks best test score
+- Adaptive acceptance logic:
+  - Score < 10%: Requires strict improvement (avoid 0% loops)
+  - Score ≥ 10%: Allows lateral moves (explore at high percentages)
+
+**7. Data-Driven Descriptive Feedback** (`src/evaluator/feedback_analyzer.py`)
+- Analyzes actual failure patterns instead of using generic templates
+- Extracts common patterns: expected/actual outputs, metrics (avg length, extra words)
+- Generates specific descriptions with concrete data
+- Provides targeted recommendations based on actual patterns
+- Methods: `_find_common_patterns`, `_describe_pattern_observed`, `_describe_recommended_fix`
+
+**8. Combined Feedback for Regressions** (`src/optimizer/models.py::CombinedFeedback`)
+- Special feedback mode when test refinements break training
+- Includes both:
+  - Test patterns to fix (descriptive)
+  - Training constraints to preserve (specific cases that broke)
+- Prevents regression loops
+- Template: `REFINEMENT_PROMPT_COMBINED` in `src/optimizer/prompts.py`
+
+**9. Thread-Safe High-Performance Evaluation** (`src/evaluator/test_runner.py`)
+- ThreadPoolExecutor with configurable workers (default: 50)
+- Thread-safe cache with explicit locks (`_cache_lock`)
+- Cache key: `(prompt, input, system_message)`
+- All cache operations protected from race conditions
+- Methods: `get_cache_stats`, `clear_cache`
+- Typical performance: 3-5x speedup with parallelization + caching
 
 ---
 

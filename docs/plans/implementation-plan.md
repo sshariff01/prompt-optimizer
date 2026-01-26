@@ -36,6 +36,22 @@ Build a prompt optimization system that uses Claude Opus 4.5 to iteratively refi
 - **No frameworks:** No DSPy, no LangChain (build from scratch), will add
 	LangSmith later
 
+### Model Extensibility Design
+**Key Principle:** Implementation designed for easy model swapping
+
+- **Provider Abstraction:** Abstract `LLMProvider` interface separates model calls from core logic
+- **Configuration-Driven:** Model selection via YAML config (`optimizer.model`, `target_model.provider`), not hardcoded
+- **Default Implementation:**
+  - Optimizer: Claude Opus 4.5 (highest quality meta-reasoning)
+  - Target: User-configurable (Claude Sonnet, GPT-4, Gemini, etc.)
+- **Future Extensions:** Adding new providers (OpenAI, Google, Cohere) requires implementing provider interface, no changes to core components
+- **Swap Without Refactoring:** Change config to switch from Claude to GPT-4 without touching code
+
+**Implementation Strategy:**
+- `src/optimizer/meta_optimizer.py` depends on `LLMProvider` interface, not `anthropic` SDK directly
+- `src/evaluator/test_runner.py` uses same abstraction for target model
+- Provider implementations in `src/providers/` (anthropic.py, openai.py, etc.)
+
 ### Cost Controls
 - Max 30 iterations (~$15-20 budget)
 - Token budget: 1M optimizer tokens
@@ -49,7 +65,8 @@ Build a prompt optimization system that uses Claude Opus 4.5 to iteratively refi
 ### Components
 
 **1. Optimizer Component** (`src/optimizer/meta_optimizer.py`)
-- Uses Claude Opus 4.5 for meta-prompt engineering
+- Uses configurable LLM for meta-prompt engineering (default: Claude Opus 4.5)
+- Depends on `LLMProvider` interface, not specific SDK
 - Receives comprehensive feedback from evaluations
 - Generates/refines zero-shot instruction prompts
 - Maintains conversation history for context
@@ -122,9 +139,14 @@ Loop until test 100% or limits hit:
 prompt-optimizer/
 ├── src/
 │   ├── __init__.py
+│   ├── providers/
+│   │   ├── __init__.py
+│   │   ├── base.py                 # LLMProvider interface
+│   │   ├── anthropic.py            # Anthropic implementation
+│   │   └── openai.py               # OpenAI implementation (future)
 │   ├── optimizer/
 │   │   ├── __init__.py
-│   │   ├── meta_optimizer.py       # Opus-based prompt refiner
+│   │   ├── meta_optimizer.py       # Model-agnostic prompt refiner
 │   │   ├── prompts.py              # Meta-prompt templates
 │   │   └── models.py               # Pydantic models
 │   ├── evaluator/
@@ -366,12 +388,14 @@ stopping_criteria:
 ### Priority 1 (Phase 1 - MVP)
 
 1. **pyproject.toml** - Dependencies and project metadata
-2. **src/optimizer/models.py** - Pydantic models for config, data, results
-3. **src/optimizer/meta_optimizer.py** - Core Opus integration
-4. **src/evaluator/test_runner.py** - Eval execution logic
-5. **src/orchestrator/optimization_loop.py** - Main workflow
-6. **src/cli/main.py** - CLI entry point
-7. **.env.example** - API key template
+2. **src/providers/base.py** - LLMProvider interface (abstraction for model swapping)
+3. **src/providers/anthropic.py** - Anthropic provider implementation
+4. **src/optimizer/models.py** - Pydantic models for config, data, results
+5. **src/optimizer/meta_optimizer.py** - Model-agnostic optimizer using LLMProvider
+6. **src/evaluator/test_runner.py** - Eval execution logic
+7. **src/orchestrator/optimization_loop.py** - Main workflow
+8. **src/cli/main.py** - CLI entry point
+9. **.env.example** - API key template
 
 ### Priority 2 (Phase 2 - Rich Feedback)
 

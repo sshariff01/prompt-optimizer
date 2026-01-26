@@ -14,7 +14,10 @@ The system iteratively refines prompts until both training and test sets reach 1
 ## Key Features
 
 - **Iterative Refinement:** Uses advanced LLMs for intelligent meta-prompt engineering
-- **Model Flexibility:** Configurable optimizer and target models (Claude, GPT-4, Gemini, etc.)
+- **Model Flexibility:** Provider abstraction design enables easy model swapping
+  - Configurable optimizer and target models via YAML config
+  - Default: Claude Opus 4.5 (optimizer) + any target model
+  - Future: OpenAI, Google, Cohere support via provider interface
 - **Rich Feedback:** Comprehensive error analysis with diffs, categorization, and pattern detection
 - **Overfitting Prevention:** Test feedback provides patterns without revealing specific examples
 - **Cost Controls:** Hard limits on iterations, tokens, and plateau detection

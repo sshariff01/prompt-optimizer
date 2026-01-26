@@ -434,7 +434,3 @@ Fix: Add guidance for weighing conflicting signals
 ```
 
 The validation set is used during optimization with constrained feedback. For true out-of-sample evaluation, maintain a separate held-out test set that is never used during the optimization loop.
-
-## Contributing
-
-The MVP (Phase 1 + Phase 2) is complete and functional. Contributions for Phase 3 (robustness) and Phase 4 (polish) are welcome!

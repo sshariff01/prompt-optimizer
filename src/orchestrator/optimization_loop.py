@@ -145,7 +145,8 @@ class OptimizationLoop:
             print(f"  Pass rate: {passed}/{total} ({pass_rate:.1%})")
             print(f"  Failures: {len(feedback.failures)}")
 
-            # Save current prompt before refinement
+            # Save current state before refinement
+            previous_results = results
             previous_prompt = current_prompt
             previous_pass_rate = training_pass_rate
 
@@ -158,16 +159,19 @@ class OptimizationLoop:
                 print(f"\n  Candidate prompt:\n{candidate_prompt}\n")
 
             # Evaluate refined prompt
-            results = self.test_runner.run_eval(candidate_prompt, training_cases)
-            new_pass_rate, passed, total = self.test_runner.compute_pass_rate(results)
+            candidate_results = self.test_runner.run_eval(candidate_prompt, training_cases)
+            new_pass_rate, passed, total = self.test_runner.compute_pass_rate(candidate_results)
 
             # Validate: only accept if improvement or maintaining performance
             if self.prompt_history.should_accept(new_pass_rate, previous_pass_rate, phase="training"):
+                # Accept: update to new prompt and results
+                results = candidate_results
                 current_prompt = candidate_prompt
                 training_pass_rate = new_pass_rate
                 print(f"  \033[92m✓ Accepted: {previous_pass_rate:.1%} → {new_pass_rate:.1%}\033[0m")
             else:
-                # Reject and keep previous prompt
+                # Reject and restore previous state
+                results = previous_results  # Restore results to match current_prompt
                 current_prompt = previous_prompt
                 training_pass_rate = previous_pass_rate
                 print(f"  \033[91m✗ Rejected (regression): {previous_pass_rate:.1%} → {new_pass_rate:.1%}\033[0m")
@@ -308,7 +312,8 @@ class OptimizationLoop:
             print(f"  Test pass rate: {passed}/{total} ({test_pass_rate:.1%})")
             print(f"  Error patterns: {len(feedback.error_patterns)}")
 
-            # Save current prompt before refinement
+            # Save current state before refinement
+            previous_results = results
             previous_prompt = current_prompt
             previous_test_pass_rate = test_pass_rate
             previous_training_pass_rate = training_pass_rate
@@ -329,22 +334,26 @@ class OptimizationLoop:
             # Check if training performance is maintained
             total_test_cases = len(test_cases)
             if new_training_pass_rate < previous_training_pass_rate:
-                # Training regressed - reject immediately
+                # Training regressed - reject immediately and restore previous state
+                results = previous_results  # Restore results to match current_prompt
                 print(f"  \033[91m✗ Rejected (training regression): {previous_training_pass_rate:.1%} → {new_training_pass_rate:.1%}\033[0m")
                 print(f"  Keeping previous prompt")
             else:
                 # Training OK, now evaluate on test set
-                results = self.test_runner.run_eval(candidate_prompt, test_cases)
-                new_test_pass_rate, passed, total = self.test_runner.compute_pass_rate(results)
+                candidate_results = self.test_runner.run_eval(candidate_prompt, test_cases)
+                new_test_pass_rate, passed, total = self.test_runner.compute_pass_rate(candidate_results)
 
                 # Validate: only accept if improvement or maintaining performance on test
                 if self.prompt_history.should_accept(new_test_pass_rate, previous_test_pass_rate, phase="test"):
+                    # Accept: update to new prompt and results
+                    results = candidate_results
                     current_prompt = candidate_prompt
                     test_pass_rate = new_test_pass_rate
                     training_pass_rate = new_training_pass_rate
                     print(f"  \033[92m✓ Accepted: test {previous_test_pass_rate:.1%} → {new_test_pass_rate:.1%}, training {previous_training_pass_rate:.1%} → {training_pass_rate:.1%}\033[0m")
                 else:
-                    # Test regressed - reject and keep previous prompt
+                    # Test regressed - reject and restore previous state
+                    results = previous_results  # Restore results to match current_prompt
                     current_prompt = previous_prompt
                     test_pass_rate = previous_test_pass_rate
                     print(f"  \033[91m✗ Rejected (test regression): {previous_test_pass_rate:.1%} → {new_test_pass_rate:.1%}\033[0m")

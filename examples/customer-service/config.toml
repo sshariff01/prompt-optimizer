@@ -12,9 +12,9 @@ max_tokens = 100
 
 [optimizer]
 model = "claude-opus-4-5-20251101"
-max_iterations = 20
+max_iterations = 50
 max_optimizer_tokens = 500000
-max_test_iterations = 10
+max_test_iterations = 25
 plateau_threshold = 4
 
 [data]

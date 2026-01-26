@@ -63,7 +63,7 @@ class OptimizationLoop:
         print(f"Optimizer: {self.meta_optimizer.provider.model_name}\n")
 
         # Step 1: Generate initial prompt
-        print("Iteration 0: Generating initial prompt...")
+        print("\033[94mIteration 0: Generating initial prompt...\033[0m")
         current_prompt = self.meta_optimizer.generate_initial_prompt(
             task_description=self.config.task_description,
             training_examples=training_cases,
@@ -137,7 +137,7 @@ class OptimizationLoop:
             # Generate detailed feedback for failures
             feedback = self.feedback_analyzer.analyze_training_results(results)
 
-            print(f"Iteration {iteration}: Refining prompt...")
+            print(f"\033[94mIteration {iteration}: Refining prompt...\033[0m")
             print(f"  Pass rate: {passed}/{total} ({pass_rate:.1%})")
             print(f"  Failures: {len(feedback.failures)}")
 
@@ -297,7 +297,7 @@ class OptimizationLoop:
             # Generate descriptive feedback (patterns only, no specifics)
             feedback = self.feedback_analyzer.analyze_test_results(results)
 
-            print(f"Iteration {iteration}: Refining based on test patterns...")
+            print(f"\033[94mIteration {iteration}: Refining based on test patterns...\033[0m")
             print(f"  Test pass rate: {passed}/{total} ({test_pass_rate:.1%})")
             print(f"  Error patterns: {len(feedback.error_patterns)}")
 

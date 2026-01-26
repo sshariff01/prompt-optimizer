@@ -112,6 +112,7 @@ class OptimizationLoop:
                 if test_cases:
                     return self._optimize_test_phase(
                         current_prompt=current_prompt,
+                        training_cases=training_cases,
                         test_cases=test_cases,
                         starting_iteration=iteration,
                         training_pass_rate=training_pass_rate,
@@ -216,6 +217,7 @@ class OptimizationLoop:
     def _optimize_test_phase(
         self,
         current_prompt: str,
+        training_cases: list[EvalCase],
         test_cases: list[EvalCase],
         starting_iteration: int,
         training_pass_rate: float,
@@ -224,6 +226,7 @@ class OptimizationLoop:
 
         Args:
             current_prompt: The prompt that passed training
+            training_cases: Training evaluation cases (for validation)
             test_cases: Test evaluation cases
             starting_iteration: Iteration number to start from
             training_pass_rate: Final training pass rate
@@ -308,6 +311,7 @@ class OptimizationLoop:
             # Save current prompt before refinement
             previous_prompt = current_prompt
             previous_test_pass_rate = test_pass_rate
+            previous_training_pass_rate = training_pass_rate
 
             # Refine prompt based on descriptive test feedback
             candidate_prompt = self.meta_optimizer.refine_prompt_test(
@@ -317,23 +321,36 @@ class OptimizationLoop:
             if self.verbose:
                 print(f"\n  Candidate prompt:\n{candidate_prompt}\n")
 
-            # Evaluate refined prompt on test set
-            results = self.test_runner.run_eval(candidate_prompt, test_cases)
-            new_test_pass_rate, passed, total = self.test_runner.compute_pass_rate(results)
+            # First, re-evaluate on training set to ensure no regression
+            print("  Re-validating against training set...")
+            training_results = self.test_runner.run_eval(candidate_prompt, training_cases)
+            new_training_pass_rate, train_passed, train_total = self.test_runner.compute_pass_rate(training_results)
 
-            # Validate: only accept if improvement or maintaining performance
-            if self.prompt_history.should_accept(new_test_pass_rate, previous_test_pass_rate, phase="test"):
-                current_prompt = candidate_prompt
-                test_pass_rate = new_test_pass_rate
-                print(f"  \033[92m✓ Accepted: {previous_test_pass_rate:.1%} → {new_test_pass_rate:.1%}\033[0m")
-            else:
-                # Reject and keep previous prompt
-                current_prompt = previous_prompt
-                test_pass_rate = previous_test_pass_rate
-                print(f"  \033[91m✗ Rejected (regression): {previous_test_pass_rate:.1%} → {new_test_pass_rate:.1%}\033[0m")
+            # Check if training performance is maintained
+            total_test_cases = len(test_cases)
+            if new_training_pass_rate < previous_training_pass_rate:
+                # Training regressed - reject immediately
+                print(f"  \033[91m✗ Rejected (training regression): {previous_training_pass_rate:.1%} → {new_training_pass_rate:.1%}\033[0m")
                 print(f"  Keeping previous prompt")
+            else:
+                # Training OK, now evaluate on test set
+                results = self.test_runner.run_eval(candidate_prompt, test_cases)
+                new_test_pass_rate, passed, total = self.test_runner.compute_pass_rate(results)
 
-            print(f"  Current test pass rate: {int(test_pass_rate * total)}/{total} ({test_pass_rate:.1%})\n")
+                # Validate: only accept if improvement or maintaining performance on test
+                if self.prompt_history.should_accept(new_test_pass_rate, previous_test_pass_rate, phase="test"):
+                    current_prompt = candidate_prompt
+                    test_pass_rate = new_test_pass_rate
+                    training_pass_rate = new_training_pass_rate
+                    print(f"  \033[92m✓ Accepted: test {previous_test_pass_rate:.1%} → {new_test_pass_rate:.1%}, training {previous_training_pass_rate:.1%} → {training_pass_rate:.1%}\033[0m")
+                else:
+                    # Test regressed - reject and keep previous prompt
+                    current_prompt = previous_prompt
+                    test_pass_rate = previous_test_pass_rate
+                    print(f"  \033[91m✗ Rejected (test regression): {previous_test_pass_rate:.1%} → {new_test_pass_rate:.1%}\033[0m")
+                    print(f"  Keeping previous prompt")
+
+            print(f"  Current test pass rate: {int(test_pass_rate * total_test_cases)}/{total_test_cases} ({test_pass_rate:.1%})\n")
 
             # Add to prompt history
             self.prompt_history.add_version(

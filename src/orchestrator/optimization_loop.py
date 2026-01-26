@@ -4,6 +4,7 @@ from src.evaluator.feedback_analyzer import FeedbackAnalyzer
 from src.evaluator.test_runner import TestRunner
 from src.optimizer.meta_optimizer import MetaOptimizer
 from src.optimizer.models import (
+    CombinedFeedback,
     EvalCase,
     IterationResult,
     OptimizationConfig,
@@ -152,21 +153,52 @@ class OptimizationLoop:
             previous_prompt = current_prompt
             previous_pass_rate = training_pass_rate
 
-            # Refine prompt based on feedback
+            # Generate multiple candidate prompts
             optimization_context = self.optimization_memory.get_context_string()
-            candidate_prompt = self.meta_optimizer.refine_prompt_training(
+            num_candidates = self.config.optimizer.candidates_per_iteration
+
+            print(f"  Generating {num_candidates} candidate prompts...")
+            candidates = self.meta_optimizer.generate_multiple_candidates(
+                base_method='training',
+                num_candidates=num_candidates,
                 current_prompt=current_prompt,
                 feedback=feedback,
                 optimization_context=optimization_context,
             )
-            if self.verbose:
-                print(f"\n  Candidate prompt:\n{candidate_prompt}\n")
 
-            # Evaluate refined prompt
-            candidate_results = self.test_runner.run_eval(candidate_prompt, training_cases)
-            new_pass_rate, passed, total = self.test_runner.compute_pass_rate(candidate_results)
+            # Evaluate all candidates and pick the best
+            best_candidate = None
+            best_results = None
+            best_pass_rate = previous_pass_rate  # Need to beat current
 
-            # Validate: only accept if improvement or maintaining performance
+            for idx, candidate_prompt in enumerate(candidates, 1):
+                print(f"  Evaluating candidate {idx}/{num_candidates}...")
+                if self.verbose:
+                    print(f"    Candidate {idx} prompt:\n{candidate_prompt}\n")
+
+                # Evaluate this candidate
+                candidate_results = self.test_runner.run_eval(candidate_prompt, training_cases)
+                candidate_pass_rate, candidate_passed, candidate_total = self.test_runner.compute_pass_rate(candidate_results)
+                print(f"    → {candidate_passed}/{candidate_total} ({candidate_pass_rate:.1%})")
+
+                # Track best candidate
+                if candidate_pass_rate > best_pass_rate:
+                    best_pass_rate = candidate_pass_rate
+                    best_candidate = candidate_prompt
+                    best_results = candidate_results
+
+            # Use the best candidate (or None if all were worse)
+            if best_candidate is not None:
+                candidate_prompt = best_candidate
+                candidate_results = best_results
+                new_pass_rate = best_pass_rate
+            else:
+                # No candidate was better - use the first one for logging purposes
+                candidate_prompt = candidates[0]
+                candidate_results = self.test_runner.run_eval(candidate_prompt, training_cases)
+                new_pass_rate, _, _ = self.test_runner.compute_pass_rate(candidate_results)
+
+            # Validate: only accept if improvement
             accepted = self.prompt_history.should_accept(new_pass_rate, previous_pass_rate, phase="training")
 
             if accepted:
@@ -293,6 +325,9 @@ class OptimizationLoop:
         test_iterations = 0
         iteration = starting_iteration + 1
 
+        # Track training regression from previous iteration
+        previous_training_regression = None  # Will store (test_feedback, training_failures)
+
         # Phase 2 loop: Refine based on test feedback
         while test_iterations < self.config.optimizer.max_test_iterations:
             # Check if we've reached 100% on test
@@ -328,12 +363,38 @@ class OptimizationLoop:
                     test_pass_rate=test_pass_rate,
                 )
 
-            # Generate descriptive feedback (patterns only, no specifics)
-            feedback = self.feedback_analyzer.analyze_test_results(results)
+            # Generate feedback based on whether we had training regression last iteration
+            if previous_training_regression is not None:
+                # Use combined feedback (test patterns + training constraints)
+                test_feedback, training_failures = previous_training_regression
+                training_failed_count = len(training_failures)
+                training_total_count = len(training_cases)
+                training_regression_rate = 1.0 - (training_failed_count / training_total_count)
 
-            print(f"\033[94mIteration {iteration}: Refining based on test patterns...\033[0m")
-            print(f"  Test pass rate: {passed}/{total} ({test_pass_rate:.1%})")
-            print(f"  Error patterns: {len(feedback.error_patterns)}")
+                feedback = CombinedFeedback(
+                    test_pass_rate=test_pass_rate,
+                    test_passed=passed,
+                    test_total=total,
+                    error_patterns=test_feedback.error_patterns,
+                    training_pass_rate=training_regression_rate,
+                    training_passed=training_total_count - training_failed_count,
+                    training_total=training_total_count,
+                    training_failures=training_failures,
+                )
+
+                print(f"\033[94mIteration {iteration}: Refining with training constraints...\033[0m")
+                print(f"  Test pass rate: {passed}/{total} ({test_pass_rate:.1%})")
+                print(f"  Training constraints: {len(training_failures)} cases to preserve")
+
+                # Reset training regression tracking after using it
+                previous_training_regression = None
+            else:
+                # Normal test feedback (patterns only, no specifics)
+                feedback = self.feedback_analyzer.analyze_test_results(results)
+
+                print(f"\033[94mIteration {iteration}: Refining based on test patterns...\033[0m")
+                print(f"  Test pass rate: {passed}/{total} ({test_pass_rate:.1%})")
+                print(f"  Error patterns: {len(feedback.error_patterns)}")
 
             # Save current state before refinement
             previous_results = results
@@ -341,36 +402,81 @@ class OptimizationLoop:
             previous_test_pass_rate = test_pass_rate
             previous_training_pass_rate = training_pass_rate
 
-            # Refine prompt based on descriptive test feedback
+            # Generate multiple candidate prompts
             optimization_context = self.optimization_memory.get_context_string()
-            candidate_prompt = self.meta_optimizer.refine_prompt_test(
+            num_candidates = self.config.optimizer.candidates_per_iteration
+
+            # Determine which method to use
+            if isinstance(feedback, CombinedFeedback):
+                method_name = 'combined'
+            else:
+                method_name = 'test'
+
+            print(f"  Generating {num_candidates} candidate prompts...")
+            candidates = self.meta_optimizer.generate_multiple_candidates(
+                base_method=method_name,
+                num_candidates=num_candidates,
                 current_prompt=current_prompt,
                 feedback=feedback,
                 optimization_context=optimization_context,
             )
-            if self.verbose:
-                print(f"\n  Candidate prompt:\n{candidate_prompt}\n")
 
-            # First, re-evaluate on training set to ensure no regression
-            print("  Re-validating against training set...")
-            training_results = self.test_runner.run_eval(candidate_prompt, training_cases)
-            new_training_pass_rate, train_passed, train_total = self.test_runner.compute_pass_rate(training_results)
+            # Evaluate all candidates - prioritize those that maintain training & improve test
+            best_candidate = None
+            best_test_results = None
+            best_test_pass_rate = previous_test_pass_rate
+            best_training_pass_rate = previous_training_pass_rate
 
-            # Check if training performance is maintained
+            had_training_regression = False
+            training_regression_info = None
+
+            for idx, candidate_prompt in enumerate(candidates, 1):
+                print(f"  Evaluating candidate {idx}/{num_candidates}...")
+                if self.verbose:
+                    print(f"    Candidate {idx} prompt:\n{candidate_prompt}\n")
+
+                # First, check training regression
+                print(f"    Re-validating against training set...")
+                training_results = self.test_runner.run_eval(candidate_prompt, training_cases)
+                candidate_training_pass_rate, train_passed, train_total = self.test_runner.compute_pass_rate(training_results)
+
+                if candidate_training_pass_rate < previous_training_pass_rate:
+                    # Training regression - skip this candidate
+                    print(f"    → Training: {previous_training_pass_rate:.1%} → {candidate_training_pass_rate:.1%} \033[91m✗ Regressed\033[0m")
+                    had_training_regression = True
+
+                    # Store for potential combined feedback next iteration
+                    if training_regression_info is None:
+                        training_failure_analysis = self.feedback_analyzer.analyze_training_results(training_results)
+                        test_feedback_for_next = self.feedback_analyzer.analyze_test_results(results)
+                        training_regression_info = (test_feedback_for_next, training_failure_analysis.failures)
+
+                    continue  # Skip to next candidate
+
+                # Training OK - evaluate on test set
+                candidate_test_results = self.test_runner.run_eval(candidate_prompt, test_cases)
+                candidate_test_pass_rate, test_passed, test_total = self.test_runner.compute_pass_rate(candidate_test_results)
+                print(f"    → Training: {candidate_training_pass_rate:.1%}, Test: {test_passed}/{test_total} ({candidate_test_pass_rate:.1%})")
+
+                # Track best candidate
+                if candidate_test_pass_rate > best_test_pass_rate:
+                    best_test_pass_rate = candidate_test_pass_rate
+                    best_candidate = candidate_prompt
+                    best_test_results = candidate_test_results
+                    best_training_pass_rate = candidate_training_pass_rate
+
+            # Use the best candidate if we found one
             total_test_cases = len(test_cases)
             accepted = False
-            new_test_pass_rate = previous_test_pass_rate  # Default if training regressed
+            new_test_pass_rate = previous_test_pass_rate
+            new_training_pass_rate = previous_training_pass_rate
 
-            if new_training_pass_rate < previous_training_pass_rate:
-                # Training regressed - reject immediately and restore previous state
-                results = previous_results  # Restore results to match current_prompt
-                print(f"  \033[91m✗ Rejected (training regression): {previous_training_pass_rate:.1%} → {new_training_pass_rate:.1%}\033[0m")
-                print(f"  Keeping previous prompt")
-                new_training_pass_rate = previous_training_pass_rate  # Restore for summary
-            else:
-                # Training OK, now evaluate on test set
-                candidate_results = self.test_runner.run_eval(candidate_prompt, test_cases)
-                new_test_pass_rate, passed, total = self.test_runner.compute_pass_rate(candidate_results)
+            if best_candidate is not None:
+                # We found a candidate that maintains training
+                candidate_prompt = best_candidate
+                candidate_results = best_test_results
+                new_test_pass_rate = best_test_pass_rate
+                new_training_pass_rate = best_training_pass_rate
 
                 # Validate: only accept if improvement or maintaining performance on test
                 if self.prompt_history.should_accept(new_test_pass_rate, previous_test_pass_rate, phase="test"):
@@ -380,6 +486,8 @@ class OptimizationLoop:
                     current_prompt = candidate_prompt
                     test_pass_rate = new_test_pass_rate
                     training_pass_rate = new_training_pass_rate
+                    # Clear any pending training regression since we accepted a good prompt
+                    previous_training_regression = None
                     print(f"  \033[92m✓ Accepted: test {previous_test_pass_rate:.1%} → {new_test_pass_rate:.1%}, training {previous_training_pass_rate:.1%} → {training_pass_rate:.1%}\033[0m")
                 else:
                     # Test regressed - reject and restore previous state
@@ -389,6 +497,19 @@ class OptimizationLoop:
                     new_training_pass_rate = previous_training_pass_rate  # Restore for summary
                     print(f"  \033[91m✗ Rejected (test regression): {previous_test_pass_rate:.1%} → {new_test_pass_rate:.1%}\033[0m")
                     print(f"  Keeping previous prompt")
+            else:
+                # All candidates had training regression - reject all
+                results = previous_results
+                current_prompt = previous_prompt
+                test_pass_rate = previous_test_pass_rate
+                training_pass_rate = previous_training_pass_rate
+                print(f"  \033[91m✗ All {num_candidates} candidates caused training regression\033[0m")
+                print(f"  Keeping previous prompt")
+
+                # Store combined feedback for next iteration
+                if training_regression_info is not None:
+                    previous_training_regression = training_regression_info
+                    print(f"  Next iteration will refine with training constraints ({len(training_regression_info[1])} cases)")
 
             print(f"  Current test pass rate: {int(test_pass_rate * total_test_cases)}/{total_test_cases} ({test_pass_rate:.1%})\n")
 

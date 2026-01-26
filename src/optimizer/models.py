@@ -35,7 +35,10 @@ class OptimizerConfig(BaseModel):
         default=7, gt=0, description="Stop if no improvement for N iterations"
     )
     max_workers: int = Field(
-        default=10, gt=0, description="Maximum parallel API calls for evaluation (default: 10)"
+        default=50, gt=0, description="Maximum parallel API calls for evaluation (default: 50)"
+    )
+    candidates_per_iteration: int = Field(
+        default=3, gt=0, le=10, description="Number of candidate prompts to generate per iteration (default: 3)"
     )
 
 
@@ -160,6 +163,23 @@ class DescriptiveFeedback(BaseModel):
     error_patterns: list[ErrorPattern]
 
 
+class CombinedFeedback(BaseModel):
+    """Combined feedback when test refinement causes training regression.
+
+    Includes both test patterns to fix and training constraints to maintain.
+    """
+
+    test_pass_rate: float
+    test_passed: int
+    test_total: int
+    error_patterns: list[ErrorPattern]  # Test patterns to fix
+
+    training_pass_rate: float
+    training_passed: int
+    training_total: int
+    training_failures: list[FailureAnalysis]  # Training cases that broke
+
+
 class IterationResult(BaseModel):
     """Result of a single optimization iteration."""
 
@@ -167,7 +187,7 @@ class IterationResult(BaseModel):
     prompt: str
     training_pass_rate: float | None = None
     test_pass_rate: float | None = None
-    feedback: DetailedFeedback | DescriptiveFeedback | None = None
+    feedback: DetailedFeedback | DescriptiveFeedback | CombinedFeedback | None = None
     optimizer_tokens_used: int = 0
 
 

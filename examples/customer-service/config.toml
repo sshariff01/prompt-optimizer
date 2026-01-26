@@ -6,12 +6,12 @@ Valid categories: RETURN_REQUEST, TRACKING_INQUIRY, PRODUCT_INQUIRY, BILLING_ISS
 
 [target_model]
 provider = "anthropic"
-model = "claude-sonnet-4-20250514"
+model = "claude-sonnet-4-5-20250514"
 temperature = 0.0
 max_tokens = 100
 
 [optimizer]
-model = "claude-opus-4-20250514"
+model = "claude-opus-4-5-20251101"
 max_iterations = 20
 max_optimizer_tokens = 500000
 max_test_iterations = 10

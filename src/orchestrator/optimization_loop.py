@@ -10,6 +10,7 @@ from src.optimizer.models import (
     OptimizationResult,
     OptimizationStatus,
 )
+from src.orchestrator.prompt_history import PromptHistory
 from src.providers.base import LLMProvider
 
 
@@ -34,6 +35,7 @@ class OptimizationLoop:
         self.test_runner = TestRunner(target_provider)
         self.feedback_analyzer = FeedbackAnalyzer()
         self.iteration_history: list[IterationResult] = []
+        self.prompt_history = PromptHistory()
 
     def optimize(
         self,
@@ -81,6 +83,13 @@ class OptimizationLoop:
                 training_pass_rate=pass_rate,
                 optimizer_tokens_used=self.meta_optimizer.get_total_tokens_used(),
             )
+        )
+
+        # Add to prompt history
+        self.prompt_history.add_version(
+            iteration=0,
+            prompt=current_prompt,
+            training_score=pass_rate,
         )
 
         # Step 3: Phase 1 - Training optimization loop
@@ -132,17 +141,40 @@ class OptimizationLoop:
             print(f"  Pass rate: {passed}/{total} ({pass_rate:.1%})")
             print(f"  Failures: {len(feedback.failures)}")
 
+            # Save current prompt before refinement
+            previous_prompt = current_prompt
+            previous_pass_rate = training_pass_rate
+
             # Refine prompt based on feedback
-            current_prompt = self.meta_optimizer.refine_prompt_training(
+            candidate_prompt = self.meta_optimizer.refine_prompt_training(
                 current_prompt=current_prompt,
                 feedback=feedback,
             )
 
             # Evaluate refined prompt
-            results = self.test_runner.run_eval(current_prompt, training_cases)
-            training_pass_rate, passed, total = self.test_runner.compute_pass_rate(results)
+            results = self.test_runner.run_eval(candidate_prompt, training_cases)
+            new_pass_rate, passed, total = self.test_runner.compute_pass_rate(results)
 
-            print(f"  New pass rate: {passed}/{total} ({training_pass_rate:.1%})\n")
+            # Validate: only accept if improvement or maintaining performance
+            if self.prompt_history.should_accept(new_pass_rate, previous_pass_rate, phase="training"):
+                current_prompt = candidate_prompt
+                training_pass_rate = new_pass_rate
+                print(f"  ✓ Accepted: {previous_pass_rate:.1%} → {new_pass_rate:.1%}")
+            else:
+                # Reject and keep previous prompt
+                current_prompt = previous_prompt
+                training_pass_rate = previous_pass_rate
+                print(f"  ✗ Rejected (regression): {previous_pass_rate:.1%} → {new_pass_rate:.1%}")
+                print(f"  Keeping previous prompt")
+
+            print(f"  Current pass rate: {int(training_pass_rate * total)}/{total} ({training_pass_rate:.1%})\n")
+
+            # Add to prompt history
+            self.prompt_history.add_version(
+                iteration=iteration,
+                prompt=current_prompt,
+                training_score=training_pass_rate,
+            )
 
             # Record iteration
             self.iteration_history.append(
@@ -215,6 +247,14 @@ class OptimizationLoop:
             )
         )
 
+        # Update prompt history with test score
+        self.prompt_history.add_version(
+            iteration=starting_iteration,
+            prompt=current_prompt,
+            training_score=training_pass_rate,
+            test_score=test_pass_rate,
+        )
+
         test_iterations = 0
         iteration = starting_iteration + 1
 
@@ -260,17 +300,41 @@ class OptimizationLoop:
             print(f"  Test pass rate: {passed}/{total} ({test_pass_rate:.1%})")
             print(f"  Error patterns: {len(feedback.error_patterns)}")
 
+            # Save current prompt before refinement
+            previous_prompt = current_prompt
+            previous_test_pass_rate = test_pass_rate
+
             # Refine prompt based on descriptive test feedback
-            current_prompt = self.meta_optimizer.refine_prompt_test(
+            candidate_prompt = self.meta_optimizer.refine_prompt_test(
                 current_prompt=current_prompt,
                 feedback=feedback,
             )
 
             # Evaluate refined prompt on test set
-            results = self.test_runner.run_eval(current_prompt, test_cases)
-            test_pass_rate, passed, total = self.test_runner.compute_pass_rate(results)
+            results = self.test_runner.run_eval(candidate_prompt, test_cases)
+            new_test_pass_rate, passed, total = self.test_runner.compute_pass_rate(results)
 
-            print(f"  New test pass rate: {passed}/{total} ({test_pass_rate:.1%})\n")
+            # Validate: only accept if improvement or maintaining performance
+            if self.prompt_history.should_accept(new_test_pass_rate, previous_test_pass_rate, phase="test"):
+                current_prompt = candidate_prompt
+                test_pass_rate = new_test_pass_rate
+                print(f"  ✓ Accepted: {previous_test_pass_rate:.1%} → {new_test_pass_rate:.1%}")
+            else:
+                # Reject and keep previous prompt
+                current_prompt = previous_prompt
+                test_pass_rate = previous_test_pass_rate
+                print(f"  ✗ Rejected (regression): {previous_test_pass_rate:.1%} → {new_test_pass_rate:.1%}")
+                print(f"  Keeping previous prompt")
+
+            print(f"  Current test pass rate: {int(test_pass_rate * total)}/{total} ({test_pass_rate:.1%})\n")
+
+            # Add to prompt history
+            self.prompt_history.add_version(
+                iteration=iteration,
+                prompt=current_prompt,
+                training_score=training_pass_rate,
+                test_score=test_pass_rate,
+            )
 
             # Record iteration
             self.iteration_history.append(

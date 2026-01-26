@@ -113,6 +113,13 @@ def optimize(
         console.print(f"  Test Pass Rate: {result.test_pass_rate:.1%}")
         console.print(f"  Total Iterations: {len(result.iterations)}")
         console.print(f"  Optimizer Tokens Used: {result.total_optimizer_tokens:,}")
+
+        # Adaptive optimization stats
+        stats = optimization_loop.prompt_history.get_stats()
+        console.print(f"\n[bold]Adaptive Optimization Stats:[/bold]")
+        console.print(f"  Refinements Accepted: {stats['accepted']}")
+        console.print(f"  Refinements Rejected: {stats['rejected']}")
+        console.print(f"  Acceptance Rate: {stats['acceptance_rate']:.1%}")
         console.print()
 
         # Final prompt

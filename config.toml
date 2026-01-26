@@ -11,7 +11,7 @@ Classify sentiment of product reviews as positive, negative, or neutral.
 
 [target_model]
 provider = "anthropic"
-model = "claude-sonnet-4-5-20250514"
+model = "claude-sonnet-4-20250514"
 temperature = 0.0
 max_tokens = 500
 

@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-Build a prompt optimization system that uses Claude Opus 4.5 to iteratively refine zero-shot prompts based on training/test set performance. The system must reach 100% pass rate on both training and test sets (within cost limits) while avoiding overfitting through descriptive test feedback.
+Build a prompt optimization system that uses Claude Opus 4.5 to iteratively refine zero-shot prompts based on training/validation performance, then evaluate once on a held-out test set. The system must reach 100% pass rate on both training and validation sets (within cost limits) while avoiding overfitting through descriptive validation feedback, and then report held-out performance.
 
 ---
 
@@ -22,8 +22,9 @@ Build a prompt optimization system that uses Claude Opus 4.5 to iteratively refi
 
 ### Data Strategy
 - **Training Set:** Input/output pairs for optimization with full feedback
-- **Test Set:** Held-out validation with descriptive (not specific) feedback
-- **Goal:** 100% on both sets without overfitting
+- **Validation Set:** Input/output pairs used during optimization with descriptive feedback
+- **Held-out Test Set:** Evaluated only at the end for true out-of-sample performance
+- **Goal:** 100% on training + validation; report held-out performance
 
 ### Technology Stack
 - **Language:** Python 3.10+
@@ -82,14 +83,15 @@ Build a prompt optimization system that uses Claude Opus 4.5 to iteratively refi
 
 **3. Feedback Analyzer Component** (`src/evaluator/feedback_analyzer.py`)
 - **Training feedback:** Full details (inputs, outputs, diffs)
-- **Test feedback:** Descriptive patterns without specific examples
+- **Validation feedback:** Descriptive patterns without specific examples
 - Error categorization (format, boundary, logic, etc.)
 - Pattern detection across failures
 
 **4. Orchestrator Component** (`src/orchestrator/optimization_loop.py`)
-- Controls two-phase optimization workflow:
+- Controls three-phase workflow:
   - Phase 1: Train until 100% with full feedback
-  - Phase 2: Test validation with descriptive feedback, iterate until 100%
+  - Phase 2: Validation optimization with descriptive feedback, iterate until 100%
+  - Phase 3: Held-out test evaluation (report only)
 - Implements stopping criteria
 - State management and checkpointing
 
@@ -105,7 +107,7 @@ Build a prompt optimization system that uses Claude Opus 4.5 to iteratively refi
 - Generates N candidate prompts per iteration (default: 3, configurable 1-10)
 - Each candidate uses temperature=0.7 for diversity
 - Training phase: Evaluates all, picks best with `>=` comparison (allows laterals)
-- Test phase: Filters training regressions first, then picks best test score
+- Validation phase: Filters training regressions first, then picks best validation score
 - Adaptive acceptance logic:
   - Score < 10%: Requires strict improvement (avoid 0% loops)
   - Score ≥ 10%: Allows lateral moves (explore at high percentages)
@@ -153,13 +155,13 @@ Loop until training 100% or limits hit:
   4. Optimizer refines based on patterns
 ```
 
-### Phase 2: Test Validation
+### Phase 2: Validation Optimization
 
 ```
-Input: Optimized prompt from Phase 1 + Test set
+Input: Optimized prompt from Phase 1 + Validation set
 
 Loop until test 100% or limits hit:
-  1. Test runner evaluates on test set
+  1. Test runner evaluates on validation set
   2. Feedback analyzer provides DESCRIPTIVE patterns:
      - Error type counts
      - Generic pattern descriptions
@@ -219,11 +221,11 @@ prompt-optimizer/
 │   ├── sentiment_analysis/
 │   │   ├── config.toml
 │   │   ├── train.jsonl
-│   │   └── test.jsonl
+│   │   └── validation.jsonl
 │   └── code_generation/
 │       ├── config.toml
 │       ├── train.jsonl
-│       └── test.jsonl
+│       └── heldout_test.jsonl
 ├── docs/
 │   └── plans/                      # Design documents (already created)
 ├── pyproject.toml
@@ -290,7 +292,8 @@ plateau_threshold = 7
 
 [data]
 training_set = "./data/train.jsonl"
-test_set = "./data/test.jsonl"
+validation_set = "./data/validation.jsonl"
+heldout_set = "./data/test.jsonl"
 
 [feedback]
 training_detail_level = "full"
@@ -302,7 +305,7 @@ test_pass_rate = 1.0
 on_incomplete_convergence = "return_best"
 ```
 
-### train.jsonl / test.jsonl
+### train.jsonl / validation.jsonl
 
 ```jsonl
 {"input": "This product is amazing!", "expected_output": "LABEL=POSITIVE"}
@@ -314,9 +317,9 @@ on_incomplete_convergence = "return_best"
 
 ## Implementation Phases
 
-### MVP = Phase 1 + Phase 2 (Complete Two-Phase System)
+### MVP = Phase 1 + Phase 2 + Phase 3 (Training + Validation + Held-out Evaluation)
 
-**IMPORTANT:** The MVP encompasses BOTH Phase 1 and Phase 2 to deliver a complete, working two-phase optimization system. This is the minimum viable product that demonstrates the core value proposition: optimizing on training set with full feedback, then validating on test set with descriptive feedback to prevent overfitting.
+**IMPORTANT:** The MVP encompasses Phase 1 + Phase 2 for optimization and Phase 3 for held-out evaluation. This delivers the core value proposition: optimize on training with full feedback, refine on validation with descriptive feedback, then report held-out performance.
 
 ---
 
@@ -342,8 +345,8 @@ on_incomplete_convergence = "return_best"
 
 ---
 
-### Phase 2: Test Set Validation (Completes MVP)
-**Goal:** Add test set validation with descriptive feedback to prevent overfitting
+### Phase 2: Validation Set Optimization (Completes Optimization)
+**Goal:** Add validation optimization with descriptive feedback to prevent overfitting
 
 **Tasks:**
 1. Implement feedback_analyzer.py:
@@ -352,15 +355,16 @@ on_incomplete_convergence = "return_best"
    - Group failures by error category
    - Extract generic patterns
    - Generate recommendations without revealing specifics
-3. Add test set refinement to meta-prompt templates
-4. Extend orchestrator to two-phase workflow:
+3. Add validation set refinement to meta-prompt templates
+4. Extend orchestrator to three-phase workflow:
    - Phase 1: Train until 100%
-   - Phase 2: Test until 100% (or limits)
+   - Phase 2: Validate until 100% (or limits)
+   - Phase 3: Held-out evaluation (report only)
 
 **Success Criteria:**
 - Training feedback includes character diffs (full details)
-- Test feedback describes patterns without revealing cases
-- System reaches 100% on both training AND test sets
+- Validation feedback describes patterns without revealing cases
+- System reaches 100% on both training AND validation sets
 - Optimizer uses feedback to make intelligent refinements
 - Demonstrates anti-overfitting mechanism works
 
@@ -555,14 +559,14 @@ This section shows the system architecture and component interactions after comp
 - Basic stopping criteria (max iterations, plateau)
 
 **What's NOT Included:**
-- ❌ Test set validation (Phase 2)
-- ❌ Descriptive feedback for test set (Phase 2)
+- ❌ Validation set validation (Phase 2)
+- ❌ Descriptive feedback for validation set (Phase 2)
 - ❌ State persistence/checkpointing (Phase 3)
 - ❌ API retry logic (Phase 3)
 
 ---
 
-### Phase 2: Rich Feedback - Two-Phase Optimization
+### Phase 2: Rich Feedback - Three-Phase Optimization
 
 **System Architecture Changes:**
 
@@ -586,10 +590,10 @@ This section shows the system architecture and component interactions after comp
 │  └───────────────────────────────────────────────────────────────┘ │
 │                                                                      │
 │  ┌───────────────────────────────────────────────────────────────┐ │
-│  │ PHASE 2: Test Set Validation (NEW)                           │ │
+│  │ PHASE 2: Validation Set Optimization                          │ │
 │  │                                                                │ │
 │  │  While test_pass_rate < 100% AND iterations < max:            │ │
-│  │    1. Evaluate on test_cases                                  │ │
+│  │    1. Evaluate on validation_cases                            │ │
 │  │    2. Generate DescriptiveFeedback (PATTERNS ONLY)            │ │
 │  │    3. Refine prompt to generalize                             │ │
 │  │                                                                │ │
@@ -599,6 +603,14 @@ This section shows the system architecture and component interactions after comp
 │  │    ├─ Generate generic examples                               │ │
 │  │    ├─ Hypothesize root causes                                 │ │
 │  │    └─ Recommend fixes                                         │ │
+│  └───────────────────────────────────────────────────────────────┘ │
+│                                                                      │
+│  ┌───────────────────────────────────────────────────────────────┐ │
+│  │ PHASE 3: Held-out Test Evaluation                             │ │
+│  │                                                                │ │
+│  │  1. Evaluate final prompt on heldout_cases                     │ │
+│  │  2. Report held-out pass rate                                  │ │
+│  │                                                                │ │
 │  └───────────────────────────────────────────────────────────────┘ │
 └──────────────────────────────────────────────────────────────────────┘
 ```
@@ -633,7 +645,7 @@ Failures ──> FeedbackAnalyzer.analyze_training_results()
               └─ Generates targeted fix
 
 
-TEST SET FEEDBACK (Descriptive Patterns):
+VALIDATION SET FEEDBACK (Descriptive Patterns):
 ────────────────────────────────────────────────────────────────
 Failures ──> FeedbackAnalyzer.analyze_test_results()
                       │
@@ -677,14 +689,15 @@ Failures ──> FeedbackAnalyzer.analyze_test_results()
    - `refine_prompt_training()` → Uses REFINEMENT_PROMPT_TRAINING template
    - `refine_prompt_test()` → Uses REFINEMENT_PROMPT_TEST template
 
-3. **OptimizationLoop** now has two-phase workflow:
+3. **OptimizationLoop** now has three-phase workflow:
    - Phase 1: Optimize on training set (full feedback)
-   - Phase 2: Validate on test set (descriptive feedback)
+   - Phase 2: Validate on validation set (descriptive feedback)
+   - Phase 3: Evaluate on held-out test set (report only)
 
 **Anti-Overfitting Mechanism:**
 
 ```
-Training Feedback: Shows actual test case
+Training Feedback: Shows actual training case
   ❌ "Input: 'Love it!' Expected: 'positive' Got: 'positive - satisfied'"
      → Optimizer could memorize this specific case
 
@@ -712,7 +725,7 @@ Test Feedback: Shows pattern only
 │                    OptimizationLoop (Production-Ready)               │
 │                                                                      │
 │  ┌───────────────────────────────────────────────────────────────┐ │
-│  │ NEW: StateManager Integration                                 │ │
+│  │ StateManager Integration                                      │ │
 │  │                                                                │ │
 │  │  After each iteration:                                        │ │
 │  │    StateManager.save_checkpoint({                             │ │
@@ -729,7 +742,7 @@ Test Feedback: Shows pattern only
 │  └───────────────────────────────────────────────────────────────┘ │
 │                                                                      │
 │  ┌───────────────────────────────────────────────────────────────┐ │
-│  │ NEW: StoppingCriteria Integration                            │ │
+│  │ StoppingCriteria Integration                                 │ │
 │  │                                                                │ │
 │  │  Before each iteration:                                       │ │
 │  │    should_stop, reason = StoppingCriteria.check({             │ │
@@ -749,7 +762,7 @@ Test Feedback: Shows pattern only
 │  └───────────────────────────────────────────────────────────────┘ │
 │                                                                      │
 │  ┌───────────────────────────────────────────────────────────────┐ │
-│  │ NEW: Error Handling & Retries                                │ │
+│  │ Error Handling & Retries                                     │ │
 │  │                                                                │ │
 │  │  All LLM calls wrapped with:                                  │ │
 │  │    try:                                                       │ │
@@ -948,14 +961,14 @@ Test Feedback: Shows pattern only
 │  └──────────────────────────────────────────────────────────┘  │
 │                                                                 │
 │  ┌──────────────────────────────────────────────────────────┐  │
-│  │ Command: resume (NEW)                                    │  │
+│  │ Command: resume                                         │  │
 │  │   - Load checkpoint.json                                 │  │
 │  │   - Display current progress                             │  │
 │  │   - Continue optimization with rich UI                   │  │
 │  └──────────────────────────────────────────────────────────┘  │
 │                                                                 │
 │  ┌──────────────────────────────────────────────────────────┐  │
-│  │ Command: analyze (NEW)                                   │  │
+│  │ Command: analyze                                        │  │
 │  │   - Load optimization_result.json                        │  │
 │  │   - Display iteration history table                      │  │
 │  │   - Show convergence graph (ASCII)                       │  │
@@ -963,7 +976,7 @@ Test Feedback: Shows pattern only
 │  └──────────────────────────────────────────────────────────┘  │
 │                                                                 │
 │  ┌──────────────────────────────────────────────────────────┐  │
-│  │ Command: validate (NEW)                                  │  │
+│  │ Command: validate                                       │  │
 │  │   - Load and validate config.toml                        │  │
 │  │   - Check all referenced files exist                     │  │
 │  │   - Verify API credentials                               │  │
@@ -999,22 +1012,22 @@ Iteration 2: Refining prompt
   Training: ████████████████████ 100% (20/20) ✓
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Phase 2: Test Set Validation
+Phase 2: Validation Set Optimization
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Iteration 3: Validating on test set
+Iteration 3: Validating on validation set
   Training: ████████████████████ 100% (20/20) ✓
-  Test:     ████████████████░░░░ 80% (8/10)
+  Validation: ████████████████░░░░ 80% (8/10)
   Tokens:   145,234 / 1,000,000
 
-Iteration 4: Refining based on test patterns
+Iteration 4: Refining based on validation patterns
   Training: ████████████████████ 100% (20/20) ✓
-  Test:     ██████████████████░░ 90% (9/10)
+  Validation: ██████████████████░░ 90% (9/10)
   Tokens:   178,456 / 1,000,000
 
-Iteration 5: Refining based on test patterns
+Iteration 5: Refining based on validation patterns
   Training: ████████████████████ 100% (20/20) ✓
-  Test:     ████████████████████ 100% (10/10) ✓
+  Validation: ████████████████████ 100% (10/10) ✓
   Tokens:   203,567 / 1,000,000
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1024,11 +1037,17 @@ Iteration 5: Refining based on test patterns
 │                                                                 │
 │ Status: SUCCESS                                                 │
 │ Training: 100% (20/20)                                          │
-│ Test: 100% (10/10)                                              │
+│ Validation: 100% (10/10)                                        │
 │ Iterations: 5                                                   │
 │ Tokens: 203,567                                                 │
 │ Estimated Cost: $6.11                                           │
 └─────────────────────────────────────────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Phase 3: Held-out Test Evaluation
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Held-out: 9/10 (90%)
 
 Final Optimized Prompt:
 ┌─────────────────────────────────────────────────────────────────┐
@@ -1138,7 +1157,8 @@ Phase 1-4 together provide a production-ready prompt optimization system with ex
 Data Flow:
   config.toml ──┐
   train.jsonl ──┼──> CLI ──> OptimizationLoop ──> Result
-  test.jsonl  ──┘                │
+  validation.jsonl ──┼──>        │
+  heldout_test.jsonl ──┘         │
                                  └──> checkpoint.json (auto-save)
 ```
 
@@ -1174,10 +1194,10 @@ User Input
                      │
                      ▼
 ┌────────────────────────────────────────────────────────────┐
-│ 3. Phase 2: Test Validation                                │
+│ 3. Phase 2: Validation Optimization                                │
 │    ┌──────────────────────────────────────────────────┐   │
 │    │ Loop until test = 100% OR limits:                │   │
-│    │   → Evaluate on test set                         │   │
+│    │   → Evaluate on validation set                         │   │
 │    │   → Generate DescriptiveFeedback (patterns)     │   │
 │    │   → Refine prompt (generalize, don't overfit)   │   │
 │    │   → Save checkpoint                              │   │
@@ -1217,7 +1237,7 @@ src/
 
 **New Capabilities:**
 - ✅ Automatic tracing of all LLM calls to LangSmith
-- ✅ Dataset logging (training/test sets uploaded)
+- ✅ Dataset logging (training/validation sets uploaded)
 - ✅ Eval result tracking in LangSmith UI
 - ✅ Prompt version comparison
 - ✅ Cost analytics dashboard
@@ -1456,7 +1476,7 @@ def test_sentiment_optimization_reaches_100_percent():
 
 ### Functional Requirements
 ✅ Reaches 100% on training set
-✅ Reaches 100% on test set (or best within limits)
+✅ Reaches 100% on validation set (or best within limits)
 ✅ Test feedback doesn't reveal specific examples
 ✅ Stops within cost limits (30 iterations / 1M tokens)
 
@@ -1475,7 +1495,7 @@ def test_sentiment_optimization_reaches_100_percent():
 
 ## Risks & Mitigations
 
-### Risk 1: Test set never reaches 100%
+### Risk 1: Validation set never reaches 100%
 **Mitigation:**
 - Descriptive feedback should be "a little bit descriptive"
 - Plateau detection stops gracefully

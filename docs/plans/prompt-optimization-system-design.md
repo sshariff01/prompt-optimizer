@@ -306,12 +306,16 @@ Generate N candidates (default: 3, configurable 1-10) per iteration:
    - Score < 10%: Require strict improvement (`>`) to avoid 0% loops
    - Score ≥ 10%: Allow lateral moves (`>=`) to explore different approaches
 
-**Test Phase:**
+**Validation Phase:**
 1. Generate 3 candidate prompts
 2. Re-validate each against training set (prevent regressions)
 3. Filter out any that break training
-4. Evaluate survivors on test set
-5. Select best test score (that maintains training)
+4. Evaluate survivors on validation set
+5. Select best validation score (that maintains training)
+
+**Held-out Test Evaluation:**
+1. Evaluate final prompt on held-out test set
+2. Report out-of-sample score (no feedback)
 
 **Benefits:**
 - **Higher success probability:** 3 chances to find improvement vs 1

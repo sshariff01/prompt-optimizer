@@ -6,5 +6,3 @@
 {"input": "Decent product for the money.", "expected_output": "LABEL=NEUTRAL"}
 {"input": "Nice features but battery life is poor.", "expected_output": "LABEL=NEUTRAL"}
 {"input": "Great price but questionable durability.", "expected_output": "LABEL=NEUTRAL"}
-{"input": "Perfect! It broke immediately.", "expected_output": "LABEL=NEGATIVE"}
-{"input": "Exactly what I wanted... if I wanted garbage.", "expected_output": "LABEL=NEGATIVE"}

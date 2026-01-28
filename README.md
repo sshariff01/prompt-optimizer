@@ -4,14 +4,15 @@ An iterative meta-prompt refinement system that uses Claude Opus 4.5 to automati
 
 ## Overview
 
-Prompt Optimizer uses a two-phase optimization workflow to create high-quality zero-shot prompts:
+Prompt Optimizer uses a three-phase workflow to create high-quality zero-shot prompts:
 
 1. **Training Phase:** Optimize prompt with full feedback (specific inputs/outputs/diffs) until 100% pass rate
 2. **Validation Phase:** Continue optimizing with descriptive feedback (patterns only, no specific examples) to improve generalization
+3. **Test Phase:** Evaluate once on a held-out test set for true out-of-sample performance
 
 The system iteratively refines prompts until both training and validation sets reach 100% pass rate, or until cost/iteration limits are reached.
 
-**Note:** Both sets are used during optimization. For true out-of-sample evaluation, maintain a separate held-out test set.
+**Note:** Training + validation are used during optimization. The held-out test set is evaluated only at the end.
 
 ## Key Features
 
@@ -19,14 +20,14 @@ The system iteratively refines prompts until both training and validation sets r
 - **Iterative Refinement:** Uses advanced LLMs for intelligent meta-prompt engineering
 - **Optimization Memory:** Context-preserving system that maintains lessons learned and iteration history, preventing repeated mistakes and enabling compounding improvements
 - **Data-Driven Feedback:** Analyzes actual failure patterns to generate specific, actionable guidance (not generic templates)
-- **Training Regression Protection:** Combined feedback system provides both test patterns to fix AND training constraints to preserve when candidates break existing functionality
+- **Training Regression Protection:** Combined feedback system provides both validation patterns to fix AND training constraints to preserve when candidates break existing functionality
 - **Model Flexibility:** Provider abstraction design enables easy model swapping
   - Configurable optimizer and target models via TOML config
   - Default: Claude Opus 4.5 (optimizer) + any target model
   - Future: OpenAI, Google, Cohere support via provider interface
 - **High-Performance Evaluation:** Thread-safe caching with 50 parallel workers (configurable) for fast evaluation
 - **Adaptive Acceptance:** Smart logic that requires strict improvement at low scores (avoid 0% loops) but allows lateral moves at high scores (explore approaches at 95%+)
-- **Overfitting Prevention:** Test feedback provides patterns without revealing specific examples
+- **Overfitting Prevention:** Validation feedback provides patterns without revealing specific examples
 - **Cost Controls:** Hard limits on iterations, tokens, and plateau detection
 - **Zero-Shot Output:** Generates standalone instruction prompts (no few-shot examples)
 
@@ -48,17 +49,25 @@ The system iteratively refines prompts until both training and validation sets r
 │  └───────────────────────────────────────────────────────────┘ │
 │                                                                 │
 │  ┌───────────────────────────────────────────────────────────┐ │
-│  │  Phase 2: Test Validation (Descriptive Feedback)        │ │
+│  │  Phase 2: Validation Optimization (Descriptive Feedback)  │ │
 │  │  ┌──────────────────────────────────────────────┐        │ │
 │  │  │ 1. Generate 3 candidates                     │        │ │
 │  │  │ 2. Re-validate each against training         │        │ │
 │  │  │ 3. Filter out training regressions           │        │ │
-│  │  │ 4. Evaluate survivors on test set            │        │ │
-│  │  │ 5. Pick best test score                      │        │ │
+│  │  │ 4. Evaluate survivors on validation set      │        │ │
+│  │  │ 5. Pick best validation score                │        │ │
 │  │  │ 6. If training regressed: use combined       │        │ │
-│  │  │    feedback (test patterns + training cases) │        │ │
+│  │  │    feedback (validation patterns + training) │        │ │
 │  │  └──────────────────────────────────────────────┘        │ │
 │  │  Repeat until 100% or limit                              │ │
+│  └───────────────────────────────────────────────────────────┘ │
+│                                                                 │
+│  ┌───────────────────────────────────────────────────────────┐ │
+│  │  Phase 3: Held-out Test Evaluation (No Feedback)        │ │
+│  │  ┌──────────────────────────────────────────────┐        │ │
+│  │  │ 1. Evaluate final prompt on held-out set      │        │ │
+│  │  │ 2. Report final out-of-sample score           │        │ │
+│  │  └──────────────────────────────────────────────┘        │ │
 │  └───────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -70,9 +79,9 @@ The system iteratively refines prompts until both training and validation sets r
 - **Test Runner:** Thread-safe parallel execution engine with intelligent caching (50 workers default)
 - **Feedback Analyzer:**
   - Training: Detailed feedback with specific failures, diffs, categorized errors
-  - Test: Data-driven descriptive patterns extracted from actual failures (not generic templates)
-  - Combined: Test patterns + training constraints when candidates break existing functionality
-- **Orchestrator:** Controls two-phase loop with adaptive acceptance logic and stopping criteria
+  - Validation: Data-driven descriptive patterns extracted from actual failures (not generic templates)
+  - Combined: Validation patterns + training constraints when candidates break existing functionality
+- **Orchestrator:** Controls the three-phase workflow with adaptive acceptance logic and stopping criteria
 - **Prompt History:** Tracks all prompt versions and manages accept/reject decisions
 
 ## Design Documents
@@ -99,15 +108,15 @@ Comprehensive design documentation is available in [`docs/plans/`](docs/plans/):
   - Feedback analyzer with detailed training feedback (diffs, error categories)
   - Optimization loop with stopping criteria
   - CLI with console output
-- [x] **Phase 2: Test Set Validation** - Descriptive feedback to prevent overfitting
+- [x] **Phase 2: Validation Set Optimization** - Descriptive feedback to prevent overfitting
   - Two-phase optimization workflow
-  - Descriptive test feedback (patterns only, no specific examples)
+  - Descriptive validation feedback (patterns only, no specific examples)
   - Anti-overfitting mechanism
-  - Test set validation with generalization
+  - Validation set optimization with generalization
 
 **MVP Status:** Phase 1 + Phase 2 together form the complete MVP. The system can optimize prompts to 100% on both training and validation sets while reducing overfitting through limited feedback.
 
-**Important Note:** The "test set" is used during optimization (more accurately called a "validation set" in ML terms). The anti-overfitting mechanism uses descriptive patterns instead of specific examples to reduce (but not eliminate) overfitting. For true out-of-sample evaluation, a separate held-out test set would be needed.
+**Important Note:** The validation set is used during optimization. The anti-overfitting mechanism uses descriptive patterns instead of specific examples to reduce (but not eliminate) overfitting. For true out-of-sample evaluation, use a separate held-out test set that is never used during the optimization loop.
 
 **In Progress:**
 - [ ] Phase 3: Robustness - State management, checkpointing, retry logic
@@ -152,7 +161,7 @@ pip install -e .
    prompt-optimizer config.toml
    ```
 
-   This will optimize a sentiment analysis prompt using the example data in `data/train.jsonl` and `data/test.jsonl`.
+   This will optimize a sentiment analysis prompt using the example data in `data/train.jsonl` and `data/validation.jsonl`.
 
 3. **Customize for your task:**
    ```bash
@@ -161,7 +170,7 @@ pip install -e .
 
    # Edit my-task-config.toml:
    # - Update task_description
-   # - Point to your training/test data files
+   # - Point to your training/validation/heldout data files
    # - Adjust model settings if needed
 
    # Run optimization
@@ -182,25 +191,26 @@ model = "claude-sonnet-4-20250514"  # Model being optimized for evaluation
 [optimizer]
 model = "claude-opus-4-5-20251101"  # Model doing the meta-prompt engineering
 max_iterations = 30                 # Maximum optimization iterations
-max_test_iterations = 15            # Maximum test phase iterations
+max_test_iterations = 15            # Maximum validation phase iterations
 candidates_per_iteration = 3        # Number of prompt candidates to generate per iteration (default: 3, max: 10)
 max_workers = 50                    # Parallel API calls for evaluation (default: 50)
 
 [data]
 training_set = "./data/train.jsonl"  # Training examples (full feedback)
-test_set = "./data/test.jsonl"       # Validation examples (limited feedback during optimization)
+validation_set = "./data/validation.jsonl"  # Validation examples (limited feedback during optimization)
+heldout_set = "./data/test.jsonl"           # Held-out test set (final evaluation only)
 ```
 
 **Key Parameters:**
 - `candidates_per_iteration`: Generates N candidate prompts per iteration, evaluates all, picks best. Higher = more exploration but 3x cost per iteration.
 - `max_workers`: Number of parallel API calls. Higher = faster evaluation (up to ~50 before diminishing returns). Anthropic rate limits apply.
-- `max_test_iterations`: Separate limit for test phase to prevent excessive optimization on validation data.
+- `max_test_iterations`: Separate limit for validation phase to prevent excessive optimization on validation data.
 
 See `config.toml` for a complete example with all available options.
 
 ## Data Format
 
-Training and test data should be in JSONL format (one JSON object per line). For strict
+Training, validation, and held-out test data should be in JSONL format (one JSON object per line). For strict
 labeling tasks, use a structured output format and define a schema in the config:
 
 ```jsonl
@@ -248,7 +258,8 @@ Loading configuration...
 
 Loading training data...
 ✓ Loaded 7 training cases
-✓ Loaded 3 test cases
+✓ Loaded 2 validation cases
+✓ Loaded 1 held-out test case
 
 Initializing providers...
 ✓ Optimizer: claude-opus-4-20250514
@@ -258,7 +269,7 @@ Starting optimization...
 
 ======================================================================
 
-Starting optimization with 7 training cases and 3 test cases
+Starting optimization with 7 training cases and 2 validation cases
 Target model: claude-sonnet-4-20250514
 Optimizer: claude-opus-4-20250514
 
@@ -279,25 +290,26 @@ PHASE 1: Training Set Optimization
 ✓ Training set: 100% pass rate achieved!
 
 ======================================================================
-PHASE 2: Test Set Validation
+PHASE 2: Validation Set Optimization
 ======================================================================
 
-Initial test evaluation: 3/3 passed (100.0%)
+Initial validation evaluation: 2/2 passed (100.0%)
 
-✓ Test set: 100% pass rate achieved!
+✓ Validation set: 100% pass rate achieved!
 
 ======================================================================
 
 Optimization Complete!
 
 ╭──────────────────────── Status: success ─────────────────────────╮
-│ Successfully reached 100% on both training and test sets!        │
-│ Training: 100.0%, Test: 100.0%                                   │
+│ Successfully reached 100% on both training and validation sets!   │
+│ Training: 100.0%, Validation: 100.0% Held-out: 100.0%             │
 ╰──────────────────────────────────────────────────────────────────╯
 
 Metrics:
   Training Pass Rate: 100.0%
-  Test Pass Rate: 100.0%
+  Validation Pass Rate: 100.0%
+  Held-out Test Pass Rate: 100.0%
   Total Iterations: 2
   Optimizer Tokens Used: 303
 
@@ -316,9 +328,9 @@ Final Optimized Prompt:
 ### Key Takeaways:
 
 - **Fast Convergence:** The optimizer generated a high-quality prompt on the first try (Iteration 0)
-- **100% Accuracy:** Achieved perfect scores on both training (7/7) and validation (3/3) sets
+- **100% Accuracy:** Achieved perfect scores on training (7/7) and validation (2/2)
 - **Efficient:** Used only 303 optimizer tokens (~$0.01 cost)
-- **Two-Phase Validation:** System confirmed success on training, then validated on held-out set
+- **Three-Phase Flow:** System optimized on training, refined on validation, then reported held-out performance
 - **Clear Output:** The final prompt is concise, clear, and ready to use
 
 This demonstrates the system's ability to quickly generate effective zero-shot prompts with minimal iterations.
@@ -339,7 +351,7 @@ This demonstrates the system's ability to quickly generate effective zero-shot p
 ... (5 more examples)
 ```
 
-**Validation Data** (5 examples):
+**Validation Data** (sample):
 ```jsonl
 {"input": "I received the wrong size. Can I exchange order #55555?", "expected_output": "CATEGORY=RETURN_REQUEST; DETAIL=SIZE; ORDER_ID=55555; CHANGE=NONE"}
 {"input": "My order still hasn't arrived and it's been a week.", "expected_output": "CATEGORY=TRACKING_INQUIRY; DETAIL=ORDER_STATUS; ORDER_ID=NONE; CHANGE=NONE"}
@@ -354,7 +366,8 @@ $ prompt-optimizer examples/customer-service/config.toml
 
 Loading configuration...
 ✓ Loaded 10 training cases
-✓ Loaded 5 test cases
+✓ Loaded 12 validation cases
+✓ Loaded 3 held-out test cases
 ✓ Optimizer: claude-opus-4-20250514
 ✓ Target model: claude-sonnet-4-20250514
 
@@ -378,16 +391,16 @@ Iteration 2: Refining prompt...
 ✓ Training set: 100% pass rate achieved!
 
 ======================================================================
-PHASE 2: Test Set Validation
+PHASE 2: Validation Set Optimization
 ======================================================================
 
-Initial test evaluation: 4/5 passed (80.0%)
+Initial validation evaluation: 9/12 passed (75.0%)
 
-Iteration 4-13: Refining based on test patterns...
+Iteration 4-13: Refining based on validation patterns...
   [Multiple iterations with feedback adjustments]
-  Test pass rate fluctuating: 40% → 60% → 80%
+  Validation pass rate fluctuating: 40% → 60% → 80%
 
-⚠ Test iteration limit reached
+⚠ Validation iteration limit reached
 
 ======================================================================
 
@@ -395,12 +408,13 @@ Optimization Complete!
 
 ╭─────────────────── Status: max_iterations ───────────────────────╮
 │ Reached maximum iterations (20).                                │
-│ Training: 100.0%, Test: 80.0%                                   │
+│ Training: 100.0%, Validation: 80.0% Held-out: 66.7%             │
 ╰──────────────────────────────────────────────────────────────────╯
 
 Metrics:
   Training Pass Rate: 100.0%
-  Test Pass Rate: 80.0%
+  Validation Pass Rate: 80.0%
+  Held-out Test Pass Rate: 66.7%
   Total Iterations: 14
   Optimizer Tokens Used: 34,256
 
@@ -415,7 +429,7 @@ nuanced intent recognition rules]
 
 - **Complex Task:** Multi-category classification with nuanced intent detection
 - **More Iterations:** Required 14 iterations vs 2 for simple yes/no task
-- **Incomplete Convergence:** Hit test iteration limit at 80% validation accuracy
+- **Incomplete Convergence:** Hit validation iteration limit at 80% validation accuracy
 - **Rich Prompt Generated:** System developed a sophisticated 200+ line prompt with:
   - Detailed category definitions
   - Decision hierarchy for ambiguous cases
@@ -451,9 +465,9 @@ This demonstrates the system's behavior on more challenging tasks where:
 - **Time to completion:** 3-10 minutes (3-5x speedup from parallelization + caching)
 - **Cache hit rate:** 25-40% typical (depends on number of candidates and re-validations)
 - **Training phase:** Usually reaches 100% reliably with adaptive acceptance logic
-- **Test phase:** 80-100% depending on task complexity and data quality
+- **Validation phase:** 80-100% depending on task complexity and data quality
 
-**Cost Breakdown (typical 50-case training, 25-case test set):**
+**Cost Breakdown (typical 50-case training, 25-case validation set):**
 - Optimizer tokens: ~5-10K per iteration (Opus 4.5 for meta-prompting)
 - Target model tokens: ~150-300 per evaluation (Sonnet 4 for testing prompts)
 - Total optimizer tokens: 50-120K over full optimization
@@ -471,7 +485,7 @@ TBD
 
 ## How It Works
 
-### Two-Phase Optimization with Multi-Candidate Exploration
+### Three-Phase Optimization with Multi-Candidate Exploration
 
 **Phase 1: Training Optimization (Full Feedback)**
 
@@ -489,16 +503,20 @@ Continues until 100% training pass rate or limits reached.
 **Phase 2: Validation with Limited Feedback (Descriptive Patterns)**
 
 Each iteration:
-1. **Generate 3 Candidates:** Create variations based on descriptive test feedback
+1. **Generate 3 Candidates:** Create variations based on descriptive validation feedback
 2. **Training Re-validation:** Test each candidate against training set to catch regressions
 3. **Filter Regressions:** Skip any candidate that breaks training performance
-4. **Test Evaluation:** Evaluate remaining candidates on test set
-5. **Select Best:** Pick candidate with best test score (that maintains training)
+4. **Validation Evaluation:** Evaluate remaining candidates on validation set
+5. **Select Best:** Pick candidate with best validation score (that maintains training)
 6. **Combined Feedback (if needed):** If candidate broke training, next iteration uses:
-   - Test patterns to fix (what we're trying to improve)
+   - Validation patterns to fix (what we're trying to improve)
    - Training constraints (specific cases not to break)
 
-Continues until 100% test pass rate or limits reached.
+Continues until 100% validation pass rate or limits reached.
+
+**Phase 3: Held-out Test Evaluation (No Feedback)**
+
+After optimization completes, the final prompt is evaluated once on the held-out test set.
 
 ### Optimization Memory: Context Preservation
 
@@ -578,24 +596,24 @@ Error Pattern: boundary_confusion (3 failures)
 
 ### Combined Feedback: Training Regression Protection
 
-When a test phase refinement accidentally breaks training cases, the system switches to **combined feedback**:
+When a validation phase refinement accidentally breaks training cases, the system switches to **combined feedback**:
 
 **Scenario:**
-- Current prompt: 100% training, 80% test
-- Generate candidate to fix test patterns
-- Candidate achieves 85% test BUT drops training to 96% ❌
+- Current prompt: 100% training, 80% validation
+- Generate candidate to fix validation patterns
+- Candidate achieves 85% validation BUT drops training to 96% ❌
 
 **Next Iteration Receives Combined Feedback:**
 ```
-SITUATION: Your last refinement tried to fix test issues but broke training.
+SITUATION: Your last refinement tried to fix validation issues but broke training.
 
-Test Patterns to Address:
-- [Descriptive patterns for the 20% test failures]
+Validation Patterns to Address:
+- [Descriptive patterns for the 20% validation failures]
 
 Training Constraints (cases that broke):
 - [Specific training cases with actual inputs/outputs that regressed]
 
-Your task: Fix test patterns WITHOUT breaking these training cases.
+Your task: Fix validation patterns WITHOUT breaking these training cases.
 ```
 
 **Result:** Optimizer learns to balance improvements with preservation, preventing the endless regression loop.

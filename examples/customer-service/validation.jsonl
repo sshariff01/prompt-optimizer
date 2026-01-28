@@ -10,6 +10,3 @@
 {"input": "Any promo codes for today?", "expected_output": "CATEGORY=DISCOUNT_INQUIRY; DETAIL=PROMO_CODE_REQUEST; ORDER_ID=NONE; CHANGE=NONE"}
 {"input": "Can I send this back? It's not what I thought it would be", "expected_output": "CATEGORY=RETURN_REQUEST; DETAIL=PRODUCT_MISMATCH; ORDER_ID=NONE; CHANGE=NONE"}
 {"input": "Order #99999 - has this been shipped?", "expected_output": "CATEGORY=TRACKING_INQUIRY; DETAIL=ORDER_STATUS; ORDER_ID=99999; CHANGE=NONE"}
-{"input": "Please cancel my pending order immediately", "expected_output": "CATEGORY=ORDER_MODIFICATION; DETAIL=ORDER_CANCELLATION; ORDER_ID=NONE; CHANGE=CANCEL"}
-{"input": "Are these available in size XL?", "expected_output": "CATEGORY=PRODUCT_INQUIRY; DETAIL=SIZE; ORDER_ID=NONE; CHANGE=NONE"}
-{"input": "The description online doesn't match what I received", "expected_output": "CATEGORY=COMPLAINT; DETAIL=MISLEADING_DESCRIPTION; ORDER_ID=NONE; CHANGE=NONE"}

@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel, Field
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class TargetModelConfig(BaseModel):
@@ -46,7 +46,18 @@ class DataConfig(BaseModel):
     """Configuration for training and test data."""
 
     training_set: Path = Field(..., description="Path to training set JSONL file")
-    test_set: Path = Field(..., description="Path to test set JSONL file")
+    validation_set: Path | None = Field(
+        default=None,
+        description="Path to validation set JSONL file (used during optimization)",
+    )
+    test_set: Path | None = Field(
+        default=None,
+        description="Deprecated alias for validation_set (kept for backward compatibility)",
+    )
+    heldout_set: Path | None = Field(
+        default=None,
+        description="Path to held-out test set JSONL file (final evaluation only)",
+    )
 
 
 class SchemaConfig(BaseModel):
@@ -91,7 +102,12 @@ class StoppingCriteriaConfig(BaseModel):
     """Configuration for stopping criteria."""
 
     training_pass_rate: float = Field(default=1.0, ge=0.0, le=1.0)
-    test_pass_rate: float = Field(default=1.0, ge=0.0, le=1.0)
+    test_pass_rate: float = Field(
+        default=1.0,
+        ge=0.0,
+        le=1.0,
+        description="Validation pass rate target (legacy name retained)",
+    )
     on_incomplete_convergence: IncompleteConvergenceStrategy = (
         IncompleteConvergenceStrategy.RETURN_BEST
     )
@@ -104,16 +120,15 @@ class OptimizationConfig(BaseSettings):
     target_model: TargetModelConfig
     optimizer: OptimizerConfig = Field(default_factory=OptimizerConfig)
     data: DataConfig
-    schema: SchemaConfig | None = Field(
-        default=None, description="Optional strict output schema for evaluation"
+    schema_: SchemaConfig | None = Field(
+        default=None,
+        alias="schema",
+        description="Optional strict output schema for evaluation",
     )
     feedback: FeedbackConfig = Field(default_factory=FeedbackConfig)
     stopping_criteria: StoppingCriteriaConfig = Field(default_factory=StoppingCriteriaConfig)
 
-    class Config:
-        """Pydantic config."""
-
-        env_prefix = "PROMPT_OPT_"
+    model_config = SettingsConfigDict(env_prefix="PROMPT_OPT_", populate_by_name=True)
 
 
 class EvalCase(BaseModel):
@@ -228,5 +243,6 @@ class OptimizationResult(BaseModel):
     iterations: list[IterationResult]
     training_pass_rate: float
     test_pass_rate: float
+    heldout_pass_rate: float | None = None
     total_optimizer_tokens: int
     message: str  # Human-readable status message

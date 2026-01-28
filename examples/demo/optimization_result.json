@@ -1,26 +1,19 @@
 {
   "status": "success",
-  "final_prompt": "Answer the following yes/no question. Respond with exactly 'LABEL=YES' or 'LABEL=NO'. Do not include any punctuation, explanations, or additional text. If the question is ambiguous or cannot be definitively answered, choose the most reasonable interpretation based on common knowledge and scientific consensus.",
+  "final_prompt": "You are a question-answering system that responds to yes/no questions.\n\nYour task is to analyze the given question and determine whether the correct answer is YES or NO.\n\nInstructions:\n1. Read the question carefully\n2. Determine if the statement or question is true (YES) or false (NO)\n3. Base your answer on factual, commonly accepted knowledge\n4. For ambiguous questions, consider the most common interpretation\n5. If a question contains an absolute term (all, never, always), evaluate whether it holds true in all cases\n\nOutput Format:\n- You must output EXACTLY one of these two responses:\n  - LABEL=YES (if the answer to the question is affirmative/true)\n  - LABEL=NO (if the answer to the question is negative/false)\n- Do not include any other text, explanation, or punctuation\n- Do not add spaces or modify the format in any way\n\nAnswer the following question:",
   "iterations": [
     {
       "iteration": 0,
-      "prompt": "Answer the following yes/no question. Respond with exactly 'LABEL=YES' or 'LABEL=NO'. Do not include any punctuation, explanations, or additional text. If the question is ambiguous or cannot be definitively answered, choose the most reasonable interpretation based on common knowledge and scientific consensus.",
+      "prompt": "You are a question-answering system that responds to yes/no questions.\n\nYour task is to analyze the given question and determine whether the correct answer is YES or NO.\n\nInstructions:\n1. Read the question carefully\n2. Determine if the statement or question is true (YES) or false (NO)\n3. Base your answer on factual, commonly accepted knowledge\n4. For ambiguous questions, consider the most common interpretation\n5. If a question contains an absolute term (all, never, always), evaluate whether it holds true in all cases\n\nOutput Format:\n- You must output EXACTLY one of these two responses:\n  - LABEL=YES (if the answer to the question is affirmative/true)\n  - LABEL=NO (if the answer to the question is negative/false)\n- Do not include any other text, explanation, or punctuation\n- Do not add spaces or modify the format in any way\n\nAnswer the following question:",
       "training_pass_rate": 1.0,
       "test_pass_rate": null,
       "feedback": null,
-      "optimizer_tokens_used": 303
-    },
-    {
-      "iteration": 1,
-      "prompt": "Answer the following yes/no question. Respond with exactly 'LABEL=YES' or 'LABEL=NO'. Do not include any punctuation, explanations, or additional text. If the question is ambiguous or cannot be definitively answered, choose the most reasonable interpretation based on common knowledge and scientific consensus.",
-      "training_pass_rate": 1.0,
-      "test_pass_rate": 1.0,
-      "feedback": null,
-      "optimizer_tokens_used": 303
+      "optimizer_tokens_used": 505
     }
   ],
   "training_pass_rate": 1.0,
   "test_pass_rate": 1.0,
-  "total_optimizer_tokens": 303,
-  "message": "Successfully reached 100% on both training and test sets! Training: 100.0%, Test: 100.0%"
+  "heldout_pass_rate": 1.0,
+  "total_optimizer_tokens": 505,
+  "message": "Successfully reached 100% on both training and validation sets! Training: 100.0%, Validation: 100.0% Held-out: 100.0%"
 }

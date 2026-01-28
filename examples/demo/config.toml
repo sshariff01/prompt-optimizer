@@ -18,7 +18,8 @@ plateau_threshold = 3
 
 [data]
 training_set = "./examples/demo/train.jsonl"
-test_set = "./examples/demo/test.jsonl"
+validation_set = "./examples/demo/validation.jsonl"
+heldout_set = "./examples/demo/heldout_test.jsonl"
 
 [schema]
 fields = ["LABEL"]

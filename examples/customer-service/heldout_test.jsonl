@@ -1,0 +1,3 @@
+{"input": "Please cancel my pending order immediately", "expected_output": "CATEGORY=ORDER_MODIFICATION; DETAIL=ORDER_CANCELLATION; ORDER_ID=NONE; CHANGE=CANCEL"}
+{"input": "Are these available in size XL?", "expected_output": "CATEGORY=PRODUCT_INQUIRY; DETAIL=SIZE; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "The description online doesn't match what I received", "expected_output": "CATEGORY=COMPLAINT; DETAIL=MISLEADING_DESCRIPTION; ORDER_ID=NONE; CHANGE=NONE"}

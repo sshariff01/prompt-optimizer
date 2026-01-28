@@ -39,7 +39,7 @@ class OptimizationLoop:
         self.test_runner = TestRunner(
             target_provider,
             max_workers=config.optimizer.max_workers,
-            schema=config.schema,
+            schema=config.schema_,
         )
         self.feedback_analyzer = FeedbackAnalyzer()
         self.iteration_history: list[IterationResult] = []
@@ -50,23 +50,25 @@ class OptimizationLoop:
     def optimize(
         self,
         training_cases: list[EvalCase],
-        test_cases: list[EvalCase] | None = None,
+        validation_cases: list[EvalCase] | None = None,
+        heldout_cases: list[EvalCase] | None = None,
     ) -> OptimizationResult:
         """Run the two-phase optimization loop.
 
         Phase 1: Optimize on training set with full feedback
-        Phase 2: Validate on test set with descriptive feedback
+        Phase 2: Validate on validation set with descriptive feedback
 
         Args:
             training_cases: Training evaluation cases
-            test_cases: Test evaluation cases (optional for MVP Phase 1 only)
+            validation_cases: Validation evaluation cases (optional)
+            heldout_cases: Held-out test cases (optional, evaluation only)
 
         Returns:
             Optimization result
         """
         print(f"Starting optimization with {len(training_cases)} training cases", end="")
-        if test_cases:
-            print(f" and {len(test_cases)} test cases")
+        if validation_cases:
+            print(f" and {len(validation_cases)} validation cases")
         else:
             print()
         print(f"Target model: {self.test_runner.target_provider.model_name}")
@@ -115,14 +117,15 @@ class OptimizationLoop:
             if training_pass_rate >= self.config.stopping_criteria.training_pass_rate:
                 print(f"✓ Training set: 100% pass rate achieved!\n")
 
-                # If we have test cases, proceed to Phase 2
-                if test_cases:
+                # If we have validation cases, proceed to Phase 2
+                if validation_cases:
                     return self._optimize_test_phase(
                         current_prompt=current_prompt,
                         training_cases=training_cases,
-                        test_cases=test_cases,
+                        test_cases=validation_cases,
                         starting_iteration=iteration,
                         training_pass_rate=training_pass_rate,
+                        heldout_cases=heldout_cases,
                     )
                 else:
                     # No test set - return success with training only
@@ -131,6 +134,7 @@ class OptimizationLoop:
                         final_prompt=current_prompt,
                         training_pass_rate=training_pass_rate,
                         test_pass_rate=0.0,
+                        heldout_pass_rate=self._evaluate_heldout(current_prompt, heldout_cases),
                     )
 
             # Check token budget
@@ -143,6 +147,8 @@ class OptimizationLoop:
                     status=OptimizationStatus.TOKEN_BUDGET_EXCEEDED,
                     final_prompt=current_prompt,
                     training_pass_rate=pass_rate,
+                    test_pass_rate=0.0,
+                    heldout_pass_rate=self._evaluate_heldout(current_prompt, heldout_cases),
                 )
 
             # Generate detailed feedback for failures
@@ -268,6 +274,7 @@ class OptimizationLoop:
                     final_prompt=current_prompt,
                     training_pass_rate=training_pass_rate,
                     test_pass_rate=0.0,
+                    heldout_pass_rate=self._evaluate_heldout(current_prompt, heldout_cases),
                 )
 
             iteration += 1
@@ -279,6 +286,7 @@ class OptimizationLoop:
             final_prompt=current_prompt,
             training_pass_rate=training_pass_rate,
             test_pass_rate=0.0,
+            heldout_pass_rate=self._evaluate_heldout(current_prompt, heldout_cases),
         )
 
     def _optimize_test_phase(
@@ -288,28 +296,30 @@ class OptimizationLoop:
         test_cases: list[EvalCase],
         starting_iteration: int,
         training_pass_rate: float,
+        heldout_cases: list[EvalCase] | None = None,
     ) -> OptimizationResult:
-        """Phase 2: Optimize on test set with descriptive feedback.
+        """Phase 2: Optimize on validation set with descriptive feedback.
 
         Args:
             current_prompt: The prompt that passed training
             training_cases: Training evaluation cases (for validation)
-            test_cases: Test evaluation cases
+            test_cases: Validation evaluation cases
             starting_iteration: Iteration number to start from
             training_pass_rate: Final training pass rate
+            heldout_cases: Held-out test cases (optional, evaluation only)
 
         Returns:
             Optimization result
         """
         print("=" * 70)
-        print("PHASE 2: Test Set Validation")
+        print("PHASE 2: Validation Set Optimization")
         print("=" * 70)
         print()
 
-        # Evaluate on test set
+        # Evaluate on validation set
         results = self.test_runner.run_eval(current_prompt, test_cases)
         test_pass_rate, passed, total = self.test_runner.compute_pass_rate(results)
-        print(f"Initial test evaluation: {passed}/{total} passed ({test_pass_rate:.1%})\n")
+        print(f"Initial validation evaluation: {passed}/{total} passed ({test_pass_rate:.1%})\n")
 
         # Don't record initial test evaluation as a separate iteration
         # The first refinement iteration will start from starting_iteration
@@ -322,14 +332,15 @@ class OptimizationLoop:
 
         # Phase 2 loop: Refine based on test feedback
         while test_iterations < self.config.optimizer.max_test_iterations:
-            # Check if we've reached 100% on test
+            # Check if we've reached 100% on validation
             if test_pass_rate >= self.config.stopping_criteria.test_pass_rate:
-                print(f"✓ Test set: 100% pass rate achieved!\n")
+                print(f"✓ Validation set: 100% pass rate achieved!\n")
                 return self._create_result(
                     status=OptimizationStatus.SUCCESS,
                     final_prompt=current_prompt,
                     training_pass_rate=training_pass_rate,
                     test_pass_rate=test_pass_rate,
+                    heldout_pass_rate=self._evaluate_heldout(current_prompt, heldout_cases),
                 )
 
             # Check token budget
@@ -343,6 +354,7 @@ class OptimizationLoop:
                     final_prompt=current_prompt,
                     training_pass_rate=training_pass_rate,
                     test_pass_rate=test_pass_rate,
+                    heldout_pass_rate=self._evaluate_heldout(current_prompt, heldout_cases),
                 )
 
             # Check overall iteration limit
@@ -353,6 +365,7 @@ class OptimizationLoop:
                     final_prompt=current_prompt,
                     training_pass_rate=training_pass_rate,
                     test_pass_rate=test_pass_rate,
+                    heldout_pass_rate=self._evaluate_heldout(current_prompt, heldout_cases),
                 )
 
             # Compute current test stats from current results
@@ -378,7 +391,7 @@ class OptimizationLoop:
                 )
 
                 print(f"\033[94mIteration {iteration}: Refining with training constraints...\033[0m")
-                print(f"  Test pass rate: {current_test_passed}/{current_test_total} ({current_test_pass_rate:.1%})")
+                print(f"  Validation pass rate: {current_test_passed}/{current_test_total} ({current_test_pass_rate:.1%})")
                 print(f"  Training constraints: {len(training_failures)} cases to preserve")
                 if test_feedback.error_patterns:
                     print(f"  Error patterns: {len(test_feedback.error_patterns)}")
@@ -394,8 +407,8 @@ class OptimizationLoop:
                 # Normal test feedback (patterns only, no specifics)
                 feedback = self.feedback_analyzer.analyze_test_results(results)
 
-                print(f"\033[94mIteration {iteration}: Refining based on test patterns...\033[0m")
-                print(f"  Test pass rate: {current_test_passed}/{current_test_total} ({current_test_pass_rate:.1%})")
+                print(f"\033[94mIteration {iteration}: Refining based on validation patterns...\033[0m")
+                print(f"  Validation pass rate: {current_test_passed}/{current_test_total} ({current_test_pass_rate:.1%})")
                 print(f"  Error patterns: {len(feedback.error_patterns)}")
                 for pattern in feedback.error_patterns:
                     print(f"   - {pattern.error_type.value}: {pattern.pattern_observed}")
@@ -463,7 +476,7 @@ class OptimizationLoop:
                 # Training OK - evaluate on test set
                 candidate_test_results = self.test_runner.run_eval(candidate_prompt, test_cases)
                 candidate_test_pass_rate, test_passed, test_total = self.test_runner.compute_pass_rate(candidate_test_results)
-                print(f"    → Training: {candidate_training_pass_rate:.1%}, Test: {test_passed}/{test_total} ({candidate_test_pass_rate:.1%})")
+                print(f"    → Training: {candidate_training_pass_rate:.1%}, Validation: {test_passed}/{test_total} ({candidate_test_pass_rate:.1%})")
 
                 # Track best candidate (use >= to allow lateral moves, matching acceptance logic)
                 if candidate_test_pass_rate >= best_test_pass_rate:
@@ -495,14 +508,14 @@ class OptimizationLoop:
                     training_pass_rate = new_training_pass_rate
                     # Clear any pending training regression since we accepted a good prompt
                     previous_training_regression = None
-                    print(f"  \033[92m✓ Accepted: test {previous_test_pass_rate:.1%} → {new_test_pass_rate:.1%}, training {previous_training_pass_rate:.1%} → {training_pass_rate:.1%}\033[0m")
+                    print(f"  \033[92m✓ Accepted: validation {previous_test_pass_rate:.1%} → {new_test_pass_rate:.1%}, training {previous_training_pass_rate:.1%} → {training_pass_rate:.1%}\033[0m")
                 else:
                     # Test regressed - reject and restore previous state
                     results = previous_results  # Restore results to match current_prompt
                     current_prompt = previous_prompt
                     test_pass_rate = previous_test_pass_rate
                     new_training_pass_rate = previous_training_pass_rate  # Restore for summary
-                    print(f"  \033[91m✗ Rejected (test regression): {previous_test_pass_rate:.1%} → {new_test_pass_rate:.1%}\033[0m")
+                    print(f"  \033[91m✗ Rejected (validation regression): {previous_test_pass_rate:.1%} → {new_test_pass_rate:.1%}\033[0m")
                     print(f"  Keeping previous prompt")
             else:
                 # No candidate improved test while maintaining training - reject all
@@ -513,7 +526,7 @@ class OptimizationLoop:
 
                 # Determine why candidates were rejected
                 if had_training_regression:
-                    print(f"  \033[91m✗ No candidate improved test score while maintaining training\033[0m")
+                    print(f"  \033[91m✗ No candidate improved validation score while maintaining training\033[0m")
                     print(f"  Keeping previous prompt")
 
                     # Store combined feedback for next iteration if any had training regression
@@ -522,10 +535,10 @@ class OptimizationLoop:
                         print(f"  Next iteration will refine with training constraints ({len(training_regression_info[1])} cases)")
                 else:
                     # All maintained training but none improved test
-                    print(f"  \033[91m✗ No candidate improved test score (all maintained training)\033[0m")
+                    print(f"  \033[91m✗ No candidate improved validation score (all maintained training)\033[0m")
                     print(f"  Keeping previous prompt")
 
-            print(f"  Current test pass rate: {int(test_pass_rate * total_test_cases)}/{total_test_cases} ({test_pass_rate:.1%})\n")
+            print(f"  Current validation pass rate: {int(test_pass_rate * total_test_cases)}/{total_test_cases} ({test_pass_rate:.1%})\n")
 
             # Record iteration summary in memory
             target_issues = self._extract_target_issues(feedback)
@@ -573,13 +586,14 @@ class OptimizationLoop:
             test_iterations += 1
             iteration += 1
 
-        # Test iteration limit reached
-        print("⚠ Test iteration limit reached\n")
+        # Validation iteration limit reached
+        print("⚠ Validation iteration limit reached\n")
         return self._create_result(
             status=OptimizationStatus.MAX_ITERATIONS,
             final_prompt=current_prompt,
             training_pass_rate=training_pass_rate,
             test_pass_rate=test_pass_rate,
+            heldout_pass_rate=self._evaluate_heldout(current_prompt, heldout_cases),
         )
 
     def _is_plateaued(self) -> bool:
@@ -605,12 +619,38 @@ class OptimizationLoop:
         # Check if all pass rates are the same (no improvement)
         return len(set(pass_rates)) == 1
 
+    def _evaluate_heldout(
+        self, prompt: str, heldout_cases: list[EvalCase] | None
+    ) -> float | None:
+        """Evaluate the final prompt on a held-out test set (no feedback).
+
+        Args:
+            prompt: Final prompt to evaluate
+            heldout_cases: Held-out evaluation cases
+
+        Returns:
+            Pass rate if held-out cases are provided, else None
+        """
+        if not heldout_cases:
+            return None
+
+        print("=" * 70)
+        print("PHASE 3: Held-out Test Evaluation")
+        print("=" * 70)
+        print()
+
+        results = self.test_runner.run_eval(prompt, heldout_cases)
+        pass_rate, passed, total = self.test_runner.compute_pass_rate(results)
+        print(f"Held-out test evaluation: {passed}/{total} passed ({pass_rate:.1%})\n")
+        return pass_rate
+
     def _create_result(
         self,
         status: OptimizationStatus,
         final_prompt: str,
         training_pass_rate: float,
         test_pass_rate: float,
+        heldout_pass_rate: float | None = None,
     ) -> OptimizationResult:
         """Create optimization result.
 
@@ -618,7 +658,8 @@ class OptimizationLoop:
             status: Optimization status
             final_prompt: The final optimized prompt
             training_pass_rate: Final training pass rate
-            test_pass_rate: Final test pass rate
+            test_pass_rate: Final validation pass rate
+            heldout_pass_rate: Final held-out test pass rate (optional)
 
         Returns:
             Optimization result
@@ -627,28 +668,31 @@ class OptimizationLoop:
         if status == OptimizationStatus.SUCCESS:
             if test_pass_rate > 0:
                 message = (
-                    f"Successfully reached 100% on both training and test sets! "
-                    f"Training: {training_pass_rate:.1%}, Test: {test_pass_rate:.1%}"
+                    f"Successfully reached 100% on both training and validation sets! "
+                    f"Training: {training_pass_rate:.1%}, Validation: {test_pass_rate:.1%}"
                 )
             else:
                 message = f"Successfully reached 100% on training set!"
         elif status == OptimizationStatus.MAX_ITERATIONS:
             message = (
                 f"Reached maximum iterations ({self.config.optimizer.max_iterations}). "
-                f"Training: {training_pass_rate:.1%}, Test: {test_pass_rate:.1%}"
+                f"Training: {training_pass_rate:.1%}, Validation: {test_pass_rate:.1%}"
             )
         elif status == OptimizationStatus.TOKEN_BUDGET_EXCEEDED:
             message = (
                 f"Token budget exceeded. "
-                f"Training: {training_pass_rate:.1%}, Test: {test_pass_rate:.1%}"
+                f"Training: {training_pass_rate:.1%}, Validation: {test_pass_rate:.1%}"
             )
         elif status == OptimizationStatus.PLATEAU_DETECTED:
             message = (
                 f"Optimization plateaued. "
-                f"Training: {training_pass_rate:.1%}, Test: {test_pass_rate:.1%}"
+                f"Training: {training_pass_rate:.1%}, Validation: {test_pass_rate:.1%}"
             )
         else:
             message = "Unknown status"
+
+        if heldout_pass_rate is not None:
+            message = f"{message} Held-out: {heldout_pass_rate:.1%}"
 
         return OptimizationResult(
             status=status,
@@ -656,6 +700,7 @@ class OptimizationLoop:
             iterations=self.iteration_history,
             training_pass_rate=training_pass_rate,
             test_pass_rate=test_pass_rate,
+            heldout_pass_rate=heldout_pass_rate,
             total_optimizer_tokens=self.meta_optimizer.get_total_tokens_used(),
             message=message,
         )

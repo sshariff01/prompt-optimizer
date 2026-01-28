@@ -1,0 +1,2 @@
+{"input": "Perfect! It broke immediately.", "expected_output": "LABEL=NEGATIVE"}
+{"input": "Exactly what I wanted... if I wanted garbage.", "expected_output": "LABEL=NEGATIVE"}

@@ -1,22 +1,24 @@
-# Test Set Feedback Strategy: Avoiding Overfitting While Reaching 100%
+# Validation Feedback Strategy: Avoiding Overfitting While Reaching 100%
 
 **Date:** 2026-01-25
-**Critical Requirement:** System must reach 100% on BOTH training and test sets
-**Strategy:** Use descriptive (but not specific) test feedback to avoid overfitting
+**Critical Requirement:** System must reach 100% on BOTH training and validation sets
+**Strategy:** Use descriptive (but not specific) validation feedback to avoid overfitting
+
+**Note:** A separate held-out test set is evaluated only at the end for true out-of-sample performance.
 
 ---
 
 ## The Challenge
 
-**Requirement:** Achieve 100% pass rate on test set
+**Requirement:** Achieve 100% pass rate on validation set
 
-**Constraint:** Cannot show test case examples to optimizer (causes overfitting)
+**Constraint:** Cannot show validation case examples to optimizer (causes overfitting)
 
-**Solution:** Provide "a little bit descriptive" feedback about test failures without revealing actual test inputs/outputs
+**Solution:** Provide "a little bit descriptive" feedback about validation failures without revealing actual validation inputs/outputs
 
 ---
 
-## Two-Phase Optimization Workflow
+## Three-Phase Workflow
 
 ### Phase 1: Training Set Optimization (Full Feedback)
 
@@ -58,16 +60,16 @@ Case 12:
 
 ---
 
-### Phase 2: Test Set Validation (Descriptive But Abstract Feedback)
+### Phase 2: Validation Set Optimization (Descriptive But Abstract Feedback)
 
-**Data:** Test set (held-out)
+**Data:** Validation set (used during optimization)
 
 **Feedback Level:** DESCRIPTIVE WITHOUT EXAMPLES
 
 #### Example 1: Good Descriptive Feedback
 
 ```
-Test Results: 8/10 passed (80%)
+Validation Results: 8/10 passed (80%)
 
 Error Type 1: Format Violation (2 failures)
   Pattern Observed: Output included additional explanatory text
@@ -103,10 +105,20 @@ Error Type 2: Boundary Confusion (1 failure)
 ✅ Specific guidance for fixing
 
 **What's NOT Included:**
-❌ Actual test case inputs
+❌ Actual validation case inputs
 ❌ Expected outputs
 ❌ Actual outputs
 ❌ Specific diffs
+
+---
+
+### Phase 3: Held-out Test Evaluation (No Feedback)
+
+**Data:** Held-out validation set (never used during optimization)
+
+**Feedback Level:** NONE (final evaluation only)
+
+**Purpose:** Report out-of-sample performance after training + validation optimization completes.
 
 ---
 
@@ -115,7 +127,7 @@ Error Type 2: Boundary Confusion (1 failure)
 ```
 ❌ BAD FEEDBACK:
 
-Test Results: 8/10 passed (80%)
+Validation Results: 8/10 passed (80%)
 
 - 2 format errors
 - 1 boundary error
@@ -130,7 +142,7 @@ Test Results: 8/10 passed (80%)
 ```
 ❌ TOO SPECIFIC:
 
-Test Results: 8/10 passed (80%)
+Validation Results: 8/10 passed (80%)
 
 Case 3:
   Input: "Love it!"
@@ -138,7 +150,7 @@ Case 3:
   Got: "positive - customer is very satisfied"
 ```
 
-**Why This Fails:** Optimizer sees actual test data, can memorize it. This IS using test as training data.
+**Why This Fails:** Optimizer sees actual validation data, can memorize it. This IS using validation as training data.
 
 ---
 
@@ -147,7 +159,7 @@ Case 3:
 ### Feedback Template for Test Failures
 
 ```
-Test Results: {pass_count}/{total} passed ({percentage}%)
+Validation Results: {pass_count}/{total} passed ({percentage}%)
 
 [For each error type:]
 
@@ -155,7 +167,7 @@ Error Type {N}: {Category Name} ({count} failures)
 
   Pattern Observed: {High-level description of what went wrong}
 
-  Example Pattern: {Generic illustration without actual test data}
+  Example Pattern: {Generic illustration without actual validation data}
                    "e.g., inputs with mixed signals" NOT
                    "Input: 'Good but expensive' → 'negative'"
 
@@ -170,7 +182,7 @@ Error Type {N}: {Category Name} ({count} failures)
 
 **Descriptive Test Feedback:**
 ```
-Test Results: 7/10 passed (70%)
+Validation Results: 7/10 passed (70%)
 
 Error Type 1: Sarcasm Detection (2 failures)
   Pattern Observed: Sarcastic statements were interpreted literally
@@ -211,7 +223,7 @@ Error Type 2: Neutral Boundary (1 failure)
 
 **Descriptive Test Feedback:**
 ```
-Test Results: 9/12 passed (75%)
+Validation Results: 9/12 passed (75%)
 
 Error Type 1: Edge Case Handling (2 failures)
   Pattern Observed: Generated code missing validation for boundary
@@ -263,7 +275,7 @@ Error Type: Sarcasm Detection (2 failures)
 ```
 
 **Opus Reasoning:**
-"Test set reveals sarcasm handling issue not apparent in training.
+"Validation set reveals sarcasm handling issue not apparent in training.
 Need to add guidance about contextual interpretation without
 overfitting to specific sarcastic phrases."
 
@@ -280,7 +292,7 @@ Important: Consider context when interpreting language.
 Output only the label in lowercase.
 ```
 
-**Key:** Opus adds *generalized* guidance about sarcasm, not specific phrases from test cases.
+**Key:** Opus adds *generalized* guidance about sarcasm, not specific phrases from validation cases.
 
 ---
 
@@ -289,8 +301,8 @@ Output only the label in lowercase.
 ### Advantages
 
 ✅ **Prevents Overfitting**
-- Optimizer never sees test case specifics
-- Can't memorize test inputs/outputs
+- Optimizer never sees validation case specifics
+- Can't memorize validation inputs/outputs
 - Forces generalization
 
 ✅ **Actionable Feedback**
@@ -303,7 +315,7 @@ Output only the label in lowercase.
 - Prompt becomes more robust over time
 - Eventually reaches 100% through generalization
 
-✅ **Maintains Test Set Integrity**
+✅ **Maintains Validation Set Integrity**
 - Test data truly measures generalization
 - No information leakage of specific examples
 - Scientifically defensible approach
@@ -346,9 +358,9 @@ def analyze_training_failures(failures):
     }
 ```
 
-**For Test Set:**
+**For Validation Set:**
 ```python
-def analyze_test_failures(failures):
+def analyze_validation_failures(failures):
     """Descriptive patterns without specific examples"""
 
     # Group failures by error category
@@ -409,15 +421,15 @@ def extract_pattern_description(failed_cases):
 - **Feedback:** Full details (inputs, outputs, diffs)
 - **Iterations:** Typically 5-10
 
-### Test Set
+### Validation Set
 - **Target:** 100% pass rate
 - **Feedback:** Descriptive patterns (no specific examples)
 - **Iterations:** Typically 3-7 additional iterations
 - **Convergence:** Continue until 100% achieved
 
 ### Total System
-- **Success:** 100% on training + 100% on test
-- **Method:** Training optimization → Test validation → Refinement loop
+- **Success:** 100% on training + 100% on validation
+- **Method:** Training optimization → Validation optimization → Held-out test evaluation
 - **Quality:** Generalized prompt, not overfitted to specific examples
 
 ---
@@ -440,8 +452,8 @@ feedback:
     include_generic_examples: true
     include_root_cause_analysis: true
     include_recommended_fixes: true
-    include_actual_test_inputs: false  # ❌ Never
-    include_actual_test_outputs: false  # ❌ Never
+    include_actual_validation_inputs: false  # ❌ Never
+    include_actual_validation_outputs: false  # ❌ Never
 
 stopping_criteria:
   # Success criteria (ideal outcome)
@@ -451,7 +463,7 @@ stopping_criteria:
   # Cost controls (prevent unbounded spending)
   max_total_iterations: 30
   max_optimizer_tokens: 1000000  # ~$15 at Opus prices
-  max_test_iterations: 15  # Don't spend more than 15 iterations on test refinement
+  max_test_iterations: 15  # Don't spend more than 15 iterations on validation refinement
 
   # Plateau detection (stop if stuck)
   plateau_iterations: 7  # No improvement for N iterations
@@ -467,7 +479,7 @@ stopping_criteria:
 
 ### The Reality: 100% May Not Always Be Achievable Within Budget
 
-**Ideal:** Reach 100% on both training and test sets
+**Ideal:** Reach 100% on both training and validation sets
 
 **Reality:** Must balance quality with cost
 
@@ -483,7 +495,7 @@ IF training_pass_rate == 100% AND test_pass_rate == 100%:
 ```
 IF iteration_count >= max_total_iterations (30):
     STOP → Return best prompt so far ⚠️
-    Report: "Reached iteration limit. Best result: Train 100%, Test 95%"
+    Report: "Reached iteration limit. Best result: Train 100%, Validation 95%"
 ```
 
 **Rationale:** Prevents infinite loops and unbounded cost
@@ -492,7 +504,7 @@ IF iteration_count >= max_total_iterations (30):
 ```
 IF total_optimizer_tokens >= max_optimizer_tokens (1M):
     STOP → Return best prompt so far ⚠️
-    Report: "Reached token budget ($15). Best result: Train 100%, Test 92%"
+    Report: "Reached token budget ($15). Best result: Train 100%, Validation 92%"
 ```
 
 **Rationale:** Explicit cost cap for budget control
@@ -501,11 +513,11 @@ IF total_optimizer_tokens >= max_optimizer_tokens (1M):
 ```
 IF test_phase_iterations >= max_test_iterations (15):
     STOP → Return best prompt so far ⚠️
-    Report: "Test refinement limit reached. Train 100%, Test 90%"
+    Report: "Validation refinement limit reached. Train 100%, Validation 90%"
 ```
 
-**Rationale:** If test set isn't improving after 15 iterations of descriptive feedback, either:
-- Test set has fundamentally different distribution than training
+**Rationale:** If validation set isn't improving after 15 iterations of descriptive feedback, either:
+- Validation set has fundamentally different distribution than training
 - Descriptive feedback isn't specific enough
 - Need more/better training data
 
@@ -513,7 +525,7 @@ IF test_phase_iterations >= max_test_iterations (15):
 ```
 IF no improvement for plateau_iterations (7) consecutive iterations:
     STOP → Return best prompt so far ⚠️
-    Report: "Optimization plateaued. Train 100%, Test 88%"
+    Report: "Optimization plateaued. Train 100%, Validation 88%"
 ```
 
 **Rationale:** If stuck at same performance for 7 iterations, unlikely to improve further
@@ -564,39 +576,39 @@ result = {
     "best_prompt": best_prompt_so_far,
     "metrics": {
         "training": {"pass_rate": 1.0, "cases": "20/20"},
-        "test": {"pass_rate": 0.95, "cases": "19/20"},
+        "validation": {"pass_rate": 0.95, "cases": "19/20"},
         "total_iterations": 30,
         "optimizer_tokens": 856432,
         "estimated_cost": "$12.85"
     },
-    "recommendation": "Consider adding more training examples covering test failure patterns"
+    "recommendation": "Consider adding more training examples covering validation failure patterns"
 }
 ```
 
 **Option 2: Raise Error**
 ```python
 raise OptimizationIncompleteError(
-    "Failed to reach 100% on test set within 30 iterations. "
+    "Failed to reach 100% on validation set within 30 iterations. "
     "Best result: Train 100%, Test 95%. "
     "Consider: (1) Increase max_iterations, (2) Add more training data, "
-    "(3) Increase test feedback specificity"
+    "(3) Increase validation feedback specificity"
 )
 ```
 
 **Option 3: Prompt User for Decision**
 ```
-⚠️ Optimization has not reached 100% on test set.
+⚠️ Optimization has not reached 100% on validation set.
 
 Current Status:
 - Training: 20/20 (100%)
-- Test: 19/20 (95%)
+- Validation: 19/20 (95%)
 - Iterations used: 30/30
 - Cost so far: $12.85
 
 Options:
-1. Accept current prompt (95% test accuracy)
+1. Accept current prompt (95% validation accuracy)
 2. Continue optimization for 10 more iterations (+$4-5)
-3. Show test failure details to guarantee convergence
+3. Show validation failure details to guarantee convergence
 4. Add more training data and restart
 
 Your choice [1-4]:
@@ -613,7 +625,7 @@ stopping_criteria:
   # Hard limits (prevent runaway costs)
   max_total_iterations: 30         # ~$15-20 cost
   max_optimizer_tokens: 1000000    # ~$15 at Opus pricing
-  max_test_iterations: 15          # Half of total for test phase
+  max_test_iterations: 15          # Half of total for validation phase
 
   # Convergence detection
   plateau_iterations: 7
@@ -634,7 +646,7 @@ Training Phase (full feedback):
 - Test runner calls: (depends on target model)
 - Total per iteration: ~$0.50-$1.00
 
-Test Phase (descriptive feedback):
+Validation Phase (descriptive feedback):
 - Optimizer call (Opus): ~10-20K tokens = $0.30-$0.60
 - Test runner calls: (depends on target model)
 - Total per iteration: ~$0.35-$0.75
@@ -643,12 +655,12 @@ Test Phase (descriptive feedback):
 
 Conservative (max 30 iterations):
 - Training phase (10 iterations): $5-10
-- Test phase (15 iterations): $5-11
+- Validation phase (15 iterations): $5-11
 - Total: $10-21
 
 Aggressive (unlimited with good convergence):
 - Training phase (5 iterations): $2.50-5
-- Test phase (5 iterations): $1.75-3.75
+- Validation phase (5 iterations): $1.75-3.75
 - Total: $4.25-8.75
 
 **Recommendation:** Set max_total_iterations to 30 for ~$20 maximum spend
@@ -660,7 +672,7 @@ When stopping without 100%, provide actionable diagnostics:
 ```python
 diagnostics = {
     "remaining_failures": {
-        "test": [
+        "validation": [
             {
                 "error_type": "Sarcasm Detection",
                 "count": 1,
@@ -673,19 +685,19 @@ diagnostics = {
         ]
     },
     "iteration_history": [
-        {"iter": 1, "train": 0.60, "test": None},
-        {"iter": 5, "train": 1.00, "test": None},
-        {"iter": 6, "train": 1.00, "test": 0.80},
-        {"iter": 10, "train": 1.00, "test": 0.90},
-        {"iter": 20, "train": 1.00, "test": 0.95},
-        {"iter": 30, "train": 1.00, "test": 0.95},  # Plateaued at 95%
+        {"iter": 1, "train": 0.60, "validation": None},
+        {"iter": 5, "train": 1.00, "validation": None},
+        {"iter": 6, "train": 1.00, "validation": 0.80},
+        {"iter": 10, "train": 1.00, "validation": 0.90},
+        {"iter": 20, "train": 1.00, "validation": 0.95},
+        {"iter": 30, "train": 1.00, "validation": 0.95},  # Plateaued at 95%
     ],
     "plateau_detected_at": 20,  # No improvement after iteration 20
     "suggestions": [
-        "Test set performance plateaued at 95% after iteration 20",
+        "Validation set performance plateaued at 95% after iteration 20",
         "Remaining failure: Sarcasm detection (1 case) resisted 8 refinement attempts",
         "Recommended: Add sarcasm examples to training set",
-        "Alternative: Increase test_feedback_specificity or show actual test case"
+        "Alternative: Increase test_feedback_specificity or show actual validation case"
     ]
 }
 ```
@@ -706,13 +718,13 @@ Iteration 2: 17/20 training (85%)
 → Opus adds mixed sentiment guidance
 
 Iteration 3: 20/20 training (100%) ✅
-→ Training complete, proceed to test
+→ Training complete, proceed to validation
 ```
 
-### Iteration 6: First Test Validation
+### Iteration 6: First Validation
 
 ```
-Test Results: 8/10 (80%)
+Validation Results: 8/10 (80%)
 
 Descriptive Feedback:
 - Sarcasm detection issues (2 cases)
@@ -720,12 +732,12 @@ Descriptive Feedback:
   Fix: Add contextual interpretation guide
 ```
 
-### Iteration 7: Refined After Test Feedback
+### Iteration 7: Refined After Validation Feedback
 
 ```
 Opus adds sarcasm handling to prompt
 
-Test Results: 9/10 (90%)
+Validation Results: 9/10 (90%)
 
 Descriptive Feedback:
 - Neutral boundary issue (1 case)
@@ -738,13 +750,20 @@ Descriptive Feedback:
 ```
 Opus clarifies neutral definition
 
-Test Results: 10/10 (100%) ✅
+Validation Results: 10/10 (100%) ✅
 
 SUCCESS:
 - Training: 20/20 (100%)
-- Test: 10/10 (100%)
+- Validation: 10/10 (100%)
 - Total iterations: 8
 - Final prompt: Generalized, not overfit
+```
+
+### Phase 3: Held-out Test Evaluation
+
+```
+Held-out Results: 9/10 (90%)
+Report only (no feedback provided during optimization)
 ```
 
 ---
@@ -752,15 +771,15 @@ SUCCESS:
 ## Why This Achieves 100% Without Overfitting
 
 1. **Training Phase:** Optimizer learns from detailed examples
-2. **Test Phase:** Optimizer refines based on error *patterns*, not specific cases
+2. **Validation Phase:** Optimizer refines based on error *patterns*, not specific cases
 3. **Generalization:** Fixes address classes of errors, not individual examples
-4. **Validation:** Test set truly measures generalization since specifics never revealed
+4. **Validation:** Validation set truly measures generalization since specifics never revealed
 5. **Convergence:** Descriptive feedback is actionable enough to guide refinement to 100%
 
 This approach balances the competing goals of:
-- ✅ Reaching 100% on test set (hard requirement)
-- ✅ Avoiding overfitting (don't show test cases)
-- ✅ Maintaining scientific rigor (test set integrity)
+- ✅ Reaching 100% on validation set (hard requirement)
+- ✅ Avoiding overfitting (don't show validation cases)
+- ✅ Maintaining scientific rigor (validation set integrity)
 - ✅ Actionable feedback (descriptive enough to fix issues)
 
 ---
@@ -770,7 +789,7 @@ This approach balances the competing goals of:
 **This strategy should be our default approach:**
 
 1. **Phase 1:** Optimize on training with full feedback → 100%
-2. **Phase 2:** Validate on test with descriptive feedback → iterate until 100%
+2. **Phase 2:** Validate on validation with descriptive feedback → iterate until 100%
 3. **Success:** Both sets at 100%, prompt generalized not memorized
 4. **Iterations:** May take 20-30 total, but worth it for quality
 

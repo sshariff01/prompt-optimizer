@@ -24,7 +24,8 @@ plateau_threshold = 7
 
 [data]
 training_set = "./examples/sentiment_analysis/train.jsonl"
-test_set = "./examples/sentiment_analysis/test.jsonl"
+validation_set = "./examples/sentiment_analysis/validation.jsonl"
+heldout_set = "./examples/sentiment_analysis/heldout_test.jsonl"
 
 [schema]
 fields = ["LABEL"]

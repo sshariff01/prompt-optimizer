@@ -1,3 +1,2 @@
 {"input": "Are trees alive?", "expected_output": "LABEL=YES"}
-{"input": "Can rocks think?", "expected_output": "LABEL=NO"}
 {"input": "Is ice frozen water?", "expected_output": "LABEL=YES"}

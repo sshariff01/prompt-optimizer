@@ -8,6 +8,7 @@ Rules:
 - ORDER_ID must be digits if present in the input, otherwise NONE.
 - CHANGE is only used for ORDER_MODIFICATION; otherwise output NONE.
 - Output exactly the four fields above, separated by semicolons.
+- Output fields in this exact order: CATEGORY, DETAIL, ORDER_ID, CHANGE.
 
 Allowed CATEGORY values:
 RETURN_REQUEST, TRACKING_INQUIRY, PRODUCT_INQUIRY, BILLING_ISSUE, COMPLAINT, ORDER_MODIFICATION,
@@ -42,7 +43,8 @@ max_workers = 50  # Number of parallel API calls for evaluation (increased for s
 
 [data]
 training_set = "./examples/customer-service/train.jsonl"
-test_set = "./examples/customer-service/test.jsonl"
+validation_set = "./examples/customer-service/validation.jsonl"
+heldout_set = "./examples/customer-service/heldout_test.jsonl"
 
 [schema]
 fields = ["CATEGORY", "DETAIL", "ORDER_ID", "CHANGE"]

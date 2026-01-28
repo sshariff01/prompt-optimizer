@@ -1,7 +1,7 @@
 # Training Set Integration & Workflow
 
 **Date:** 2026-01-25
-**Context:** Clarification on how training/test sets are used in optimization
+**Context:** Clarification on how training/validation/held-out sets are used in optimization
 **Related:** [Implementation Proposal](./2026-01-25-iterative-refinement-implementation.md)
 
 ## Key Clarifications
@@ -14,16 +14,20 @@
 - Provides feedback signal for iterative refinement
 - Larger is better (more signal for pattern detection)
 
-**Test Set:**
+**Validation Set:**
+- Input/output pairs used during optimization with descriptive feedback
+- **Seen by the optimizer only as patterns, not specific examples**
+- Used to improve generalization without overfitting
+
+**Held-out Test Set:**
 - Held-out input/output pairs
-- **Not seen during optimization**
-- Used for final validation only
-- Measures generalization of optimized prompt
+- **Never used during optimization**
+- Evaluated once at the end for true out-of-sample performance
 
 **Final Prompt:**
 - Zero-shot instructions (no examples embedded)
 - Should work on new cases without demonstrations
-- Evaluated against both train and test sets
+- Evaluated against training and validation sets during optimization, and held-out at the end
 
 ---
 
@@ -119,18 +123,18 @@ For each iteration:
 
 ---
 
-### Phase 3: Final Validation
+### Phase 3: Held-out Test Evaluation
 
 ```
-Once training set passes:
+Once training + validation pass:
 
-1. Run optimized prompt against TEST SET (held-out)
-2. Compute test set metrics
+1. Run optimized prompt against held-out TEST SET
+2. Compute held-out metrics
 3. Report both:
    - Training performance: 20/20 (100%)
-   - Test performance: 18/20 (90%)
+   - Held-out performance: 18/20 (90%)
 
-If test performance is significantly lower:
+If held-out performance is significantly lower:
 → Prompt overfit to training set
 → May need regularization or more diverse training data
 ```
@@ -234,11 +238,11 @@ But Approach 1's rich feedback integration remains the key advantage.
                     └─Loop   │
                              ▼
                   ┌──────────────────────┐
-                  │  FINAL VALIDATION    │
-                  │  (on test set)       │
+                  │  HELD-OUT EVAL       │
+                  │  (held-out set)      │
                   │                      │
                   │  Train: 20/20 (100%) │
-                  │  Test:  18/20 (90%)  │
+                  │  Held-out: 18/20 (90%)│
                   └──────────────────────┘
                              │
                              ▼
@@ -271,7 +275,8 @@ optimizer:
 
 data:
   training_set: ./data/sentiment_train.jsonl
-  test_set: ./data/sentiment_test.jsonl
+  validation_set: ./data/sentiment_validation.jsonl
+  heldout_set: ./data/sentiment_test.jsonl
 
 # Training set format (sentiment_train.jsonl):
 # {"input": "This product is amazing!", "expected_output": "LABEL=POSITIVE"}
@@ -294,7 +299,7 @@ stopping_criteria:
 - **Improvement Rate:** ΔPass rate per iteration
 - **Convergence Trend:** Are we improving or plateauing?
 
-### Final Validation (Test Set)
+### Final Evaluation (Held-out Test Set)
 - **Test Pass Rate:** % of held-out cases passing
 - **Generalization Gap:** Train pass rate - Test pass rate
   - Small gap (< 10%): Good generalization ✅
@@ -315,8 +320,11 @@ stopping_criteria:
 - 20 product review → sentiment pairs
 - Covering edge cases: mixed sentiments, sarcasm, neutral statements
 
-**Test Set (5 cases):**
-- Held-out examples, not seen during optimization
+**Validation Set (5 cases):**
+- Used during optimization with descriptive feedback
+
+**Held-out Test Set (5 cases):**
+- Evaluated once at the end (never used during optimization)
 
 ### Iteration 0: Initial Prompt
 

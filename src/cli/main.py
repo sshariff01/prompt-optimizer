@@ -67,9 +67,27 @@ def optimize(
         training_cases = load_jsonl(config.data.training_set)
         console.print(f"✓ Loaded {len(training_cases)} training cases")
 
-        # Load test data
-        test_cases = load_jsonl(config.data.test_set)
-        console.print(f"✓ Loaded {len(test_cases)} test cases\n")
+        # Backward compatibility: treat test_set as validation_set if validation_set is unset
+        if config.data.validation_set is None and config.data.test_set is not None:
+            console.print(
+                "[yellow]Note:[/yellow] data.test_set is deprecated; treating it as validation_set."
+            )
+            config.data.validation_set = config.data.test_set
+            config.data.test_set = None
+
+        # Load validation data
+        validation_cases = []
+        if config.data.validation_set:
+            validation_cases = load_jsonl(config.data.validation_set)
+            console.print(f"✓ Loaded {len(validation_cases)} validation cases")
+
+        # Load held-out test data (optional)
+        heldout_cases = []
+        if config.data.heldout_set:
+            heldout_cases = load_jsonl(config.data.heldout_set)
+            console.print(f"✓ Loaded {len(heldout_cases)} held-out test cases")
+
+        console.print()
 
         # Initialize providers
         console.print("[bold blue]Initializing providers...[/bold blue]")
@@ -97,7 +115,7 @@ def optimize(
         console.print("=" * 70)
         console.print()
 
-        result = optimization_loop.optimize(training_cases, test_cases)
+        result = optimization_loop.optimize(training_cases, validation_cases, heldout_cases)
 
         # Display results
         console.print("=" * 70)
@@ -117,7 +135,9 @@ def optimize(
         # Metrics
         console.print("\n[bold]Metrics:[/bold]")
         console.print(f"  Training Pass Rate: {result.training_pass_rate:.1%}")
-        console.print(f"  Test Pass Rate: {result.test_pass_rate:.1%}")
+        console.print(f"  Validation Pass Rate: {result.test_pass_rate:.1%}")
+        if result.heldout_pass_rate is not None:
+            console.print(f"  Held-out Test Pass Rate: {result.heldout_pass_rate:.1%}")
         console.print(f"  Total Iterations: {len(result.iterations)}")
         console.print(f"  Optimizer Tokens Used: {result.total_optimizer_tokens:,}")
 

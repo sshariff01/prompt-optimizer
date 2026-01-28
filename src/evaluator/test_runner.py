@@ -49,6 +49,58 @@ class Spinner:
 class TestRunner:
     """Executes prompts against evaluation cases."""
 
+    _ALLOWED_CATEGORIES = {
+        "RETURN_REQUEST",
+        "TRACKING_INQUIRY",
+        "PRODUCT_INQUIRY",
+        "BILLING_ISSUE",
+        "COMPLAINT",
+        "ORDER_MODIFICATION",
+        "POSITIVE_FEEDBACK",
+        "REFUND_REQUEST",
+        "POLICY_QUESTION",
+        "DISCOUNT_INQUIRY",
+    }
+    _ALLOWED_DETAILS = {
+        "ORDER_STATUS",
+        "SIZE",
+        "COLOR",
+        "MATERIAL",
+        "FEATURES",
+        "DUPLICATE_CHARGE",
+        "UNAUTHORIZED_CHARGE",
+        "PRICE_DISCREPANCY",
+        "INCORRECT_AMOUNT",
+        "PRODUCT_DEFECT",
+        "POOR_QUALITY",
+        "MISLEADING_DESCRIPTION",
+        "SERVICE_ISSUE",
+        "SHIPPING_DAMAGE",
+        "ORDER_CANCELLATION",
+        "ADD_ITEMS",
+        "REMOVE_ITEMS",
+        "ADDRESS_CHANGE",
+        "REFUND_DAMAGED",
+        "REFUND_DEFECTIVE",
+        "REFUND_NOT_RECEIVED",
+        "REFUND_QUALITY",
+        "REFUND_GENERAL",
+        "RETURN_POLICY",
+        "RETURN_WINDOW",
+        "WARRANTY_POLICY",
+        "SHIPPING_POLICY",
+        "PRICE_MATCHING",
+        "PROMO_CODE_REQUEST",
+        "CURRENT_PROMOTIONS",
+        "COUPON_AVAILABILITY",
+        "STUDENT_DISCOUNT",
+        "NEW_CUSTOMER_DISCOUNT",
+        "POSITIVE_GENERAL",
+        "PRODUCT_MISMATCH",
+        "RETURN_GENERAL",
+    }
+    _ALLOWED_CHANGES = {"ADDRESS", "COLOR", "ITEMS_ADD", "ITEMS_REMOVE", "CANCEL", "NONE"}
+
     def __init__(self, target_provider: LLMProvider, max_workers: int = 10):
         """Initialize the test runner.
 
@@ -208,11 +260,44 @@ class TestRunner:
         Returns:
             True if they match (after normalization)
         """
-        # Normalize both strings for comparison
-        actual_normalized = actual.strip().lower()
-        expected_normalized = expected.strip().lower()
+        actual_parsed = self._parse_labeled_output(actual)
+        expected_parsed = self._parse_labeled_output(expected)
+        if not actual_parsed or not expected_parsed:
+            return False
+        return actual_parsed == expected_parsed
 
-        return actual_normalized == expected_normalized
+    def _parse_labeled_output(self, output: str) -> dict[str, str] | None:
+        parts = [part.strip() for part in output.split(";") if part.strip()]
+        if len(parts) != 4:
+            return None
+
+        parsed: dict[str, str] = {}
+        for part in parts:
+            if "=" not in part:
+                return None
+            key, value = part.split("=", 1)
+            key = key.strip().upper()
+            value = value.strip().upper()
+            if not key or not value or key in parsed:
+                return None
+            parsed[key] = value
+
+        if set(parsed.keys()) != {"CATEGORY", "DETAIL", "ORDER_ID", "CHANGE"}:
+            return None
+        if parsed["CATEGORY"] not in self._ALLOWED_CATEGORIES:
+            return None
+        if parsed["DETAIL"] not in self._ALLOWED_DETAILS:
+            return None
+        if parsed["CHANGE"] not in self._ALLOWED_CHANGES:
+            return None
+
+        order_id = parsed["ORDER_ID"]
+        if order_id != "NONE" and not order_id.isdigit():
+            return None
+        if parsed["CATEGORY"] != "ORDER_MODIFICATION" and parsed["CHANGE"] != "NONE":
+            return None
+
+        return parsed
 
     def compute_pass_rate(self, results: list[EvalResult]) -> tuple[float, int, int]:
         """Compute pass rate from results.

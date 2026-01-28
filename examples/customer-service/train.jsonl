@@ -1,50 +1,50 @@
-{"input": "I want to return my order #12345 because it doesn't fit", "expected_output": "RETURN_REQUEST: Order #12345"}
-{"input": "Can I send back order #67890? Wrong size", "expected_output": "RETURN_REQUEST: Order #67890"}
-{"input": "Need to return item from order #24680. Doesn't match the description", "expected_output": "RETURN_REQUEST: Order #24680"}
-{"input": "How do I return this? Order #13579", "expected_output": "RETURN_REQUEST: Order #13579"}
-{"input": "I'd like to send this back, order number 98765", "expected_output": "RETURN_REQUEST: Order #98765"}
-{"input": "Where is my package? I ordered it 5 days ago.", "expected_output": "TRACKING_INQUIRY: Check order status"}
-{"input": "Still haven't received my order. When will it arrive?", "expected_output": "TRACKING_INQUIRY: Check order status"}
-{"input": "Can you check on order #55443? It's been a week", "expected_output": "TRACKING_INQUIRY: Check order status"}
-{"input": "Tracking shows delivered but I didn't get it", "expected_output": "TRACKING_INQUIRY: Check order status"}
-{"input": "Expected delivery was yesterday. Where is it?", "expected_output": "TRACKING_INQUIRY: Check order status"}
-{"input": "Do you have this shirt in blue?", "expected_output": "PRODUCT_INQUIRY: Color availability"}
-{"input": "What sizes do you have for this dress?", "expected_output": "PRODUCT_INQUIRY: Size availability"}
-{"input": "Is this jacket waterproof?", "expected_output": "PRODUCT_INQUIRY: Product features"}
-{"input": "Do you sell this in medium?", "expected_output": "PRODUCT_INQUIRY: Size availability"}
-{"input": "What material is this made from?", "expected_output": "PRODUCT_INQUIRY: Material information"}
-{"input": "I was charged twice for the same order!", "expected_output": "BILLING_ISSUE: Duplicate charge"}
-{"input": "Why is my credit card showing 2 charges?", "expected_output": "BILLING_ISSUE: Duplicate charge"}
-{"input": "Never received my order but was charged", "expected_output": "BILLING_ISSUE: Unauthorized charge"}
-{"input": "The price on my receipt doesn't match what I saw online", "expected_output": "BILLING_ISSUE: Price discrepancy"}
-{"input": "I was charged $150 but order total was $120", "expected_output": "BILLING_ISSUE: Incorrect amount"}
-{"input": "Your product broke after 2 days. This is unacceptable!", "expected_output": "COMPLAINT: Product defect"}
-{"input": "Terrible quality. Very disappointed", "expected_output": "COMPLAINT: Poor quality"}
-{"input": "This is nothing like the pictures online", "expected_output": "COMPLAINT: Misleading description"}
-{"input": "Customer service was rude and unhelpful", "expected_output": "COMPLAINT: Service issue"}
-{"input": "Package arrived completely damaged", "expected_output": "COMPLAINT: Shipping damage"}
-{"input": "Can I change my shipping address? I haven't received it yet.", "expected_output": "ORDER_MODIFICATION: Shipping address change"}
-{"input": "Need to update delivery address for order #55443", "expected_output": "ORDER_MODIFICATION: Shipping address change"}
-{"input": "Can I cancel my order? Just placed it 10 minutes ago", "expected_output": "ORDER_MODIFICATION: Order cancellation"}
-{"input": "Want to add another item to my order #33221", "expected_output": "ORDER_MODIFICATION: Add items"}
-{"input": "Can I remove an item from my pending order?", "expected_output": "ORDER_MODIFICATION: Remove items"}
-{"input": "Thanks for the quick delivery! Everything looks great.", "expected_output": "POSITIVE_FEEDBACK: Satisfied customer"}
-{"input": "Excellent service, very happy!", "expected_output": "POSITIVE_FEEDBACK: Satisfied customer"}
-{"input": "Product exceeded my expectations", "expected_output": "POSITIVE_FEEDBACK: Satisfied customer"}
-{"input": "Fast shipping and great quality. Thank you!", "expected_output": "POSITIVE_FEEDBACK: Satisfied customer"}
-{"input": "Love this! Will definitely order again", "expected_output": "POSITIVE_FEEDBACK: Satisfied customer"}
-{"input": "I need a refund for order #98765. The item was damaged.", "expected_output": "REFUND_REQUEST: Order #98765 - damaged item"}
-{"input": "Requesting full refund for #55443", "expected_output": "REFUND_REQUEST: Order #55443"}
-{"input": "Please refund my money. Order #33221 never arrived", "expected_output": "REFUND_REQUEST: Order #33221"}
-{"input": "Item is defective. Need refund for order #77665", "expected_output": "REFUND_REQUEST: Order #77665 - defective"}
-{"input": "Want my money back. This is broken", "expected_output": "REFUND_REQUEST: Product broken"}
-{"input": "What's your return policy?", "expected_output": "POLICY_QUESTION: Return policy"}
-{"input": "How long do I have to return items?", "expected_output": "POLICY_QUESTION: Return window"}
-{"input": "Do you offer price matching?", "expected_output": "POLICY_QUESTION: Price matching"}
-{"input": "What's your warranty policy?", "expected_output": "POLICY_QUESTION: Warranty policy"}
-{"input": "Do you ship internationally?", "expected_output": "POLICY_QUESTION: Shipping policy"}
-{"input": "Is there a discount code I can use?", "expected_output": "DISCOUNT_INQUIRY: Promo code request"}
-{"input": "Do you have any current promotions?", "expected_output": "DISCOUNT_INQUIRY: Current promotions"}
-{"input": "Are there any coupons available?", "expected_output": "DISCOUNT_INQUIRY: Coupon availability"}
-{"input": "Do you offer student discounts?", "expected_output": "DISCOUNT_INQUIRY: Student discount"}
-{"input": "Any deals for first-time customers?", "expected_output": "DISCOUNT_INQUIRY: New customer discount"}
+{"input": "I want to return my order #12345 because it doesn't fit", "expected_output": "CATEGORY=RETURN_REQUEST; DETAIL=SIZE; ORDER_ID=12345; CHANGE=NONE"}
+{"input": "Can I send back order #67890? Wrong size", "expected_output": "CATEGORY=RETURN_REQUEST; DETAIL=SIZE; ORDER_ID=67890; CHANGE=NONE"}
+{"input": "Need to return item from order #24680. Doesn't match the description", "expected_output": "CATEGORY=RETURN_REQUEST; DETAIL=PRODUCT_MISMATCH; ORDER_ID=24680; CHANGE=NONE"}
+{"input": "How do I return this? Order #13579", "expected_output": "CATEGORY=RETURN_REQUEST; DETAIL=RETURN_GENERAL; ORDER_ID=13579; CHANGE=NONE"}
+{"input": "I'd like to send this back, order number 98765", "expected_output": "CATEGORY=RETURN_REQUEST; DETAIL=RETURN_GENERAL; ORDER_ID=98765; CHANGE=NONE"}
+{"input": "Where is my package? I ordered it 5 days ago.", "expected_output": "CATEGORY=TRACKING_INQUIRY; DETAIL=ORDER_STATUS; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "Still haven't received my order. When will it arrive?", "expected_output": "CATEGORY=TRACKING_INQUIRY; DETAIL=ORDER_STATUS; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "Can you check on order #55443? It's been a week", "expected_output": "CATEGORY=TRACKING_INQUIRY; DETAIL=ORDER_STATUS; ORDER_ID=55443; CHANGE=NONE"}
+{"input": "Tracking shows delivered but I didn't get it", "expected_output": "CATEGORY=TRACKING_INQUIRY; DETAIL=ORDER_STATUS; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "Expected delivery was yesterday. Where is it?", "expected_output": "CATEGORY=TRACKING_INQUIRY; DETAIL=ORDER_STATUS; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "Do you have this shirt in blue?", "expected_output": "CATEGORY=PRODUCT_INQUIRY; DETAIL=COLOR; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "What sizes do you have for this dress?", "expected_output": "CATEGORY=PRODUCT_INQUIRY; DETAIL=SIZE; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "Is this jacket waterproof?", "expected_output": "CATEGORY=PRODUCT_INQUIRY; DETAIL=FEATURES; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "Do you sell this in medium?", "expected_output": "CATEGORY=PRODUCT_INQUIRY; DETAIL=SIZE; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "What material is this made from?", "expected_output": "CATEGORY=PRODUCT_INQUIRY; DETAIL=MATERIAL; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "I was charged twice for the same order!", "expected_output": "CATEGORY=BILLING_ISSUE; DETAIL=DUPLICATE_CHARGE; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "Why is my credit card showing 2 charges?", "expected_output": "CATEGORY=BILLING_ISSUE; DETAIL=DUPLICATE_CHARGE; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "Never received my order but was charged", "expected_output": "CATEGORY=BILLING_ISSUE; DETAIL=UNAUTHORIZED_CHARGE; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "The price on my receipt doesn't match what I saw online", "expected_output": "CATEGORY=BILLING_ISSUE; DETAIL=PRICE_DISCREPANCY; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "I was charged $150 but order total was $120", "expected_output": "CATEGORY=BILLING_ISSUE; DETAIL=INCORRECT_AMOUNT; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "Your product broke after 2 days. This is unacceptable!", "expected_output": "CATEGORY=COMPLAINT; DETAIL=PRODUCT_DEFECT; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "Terrible quality. Very disappointed", "expected_output": "CATEGORY=COMPLAINT; DETAIL=POOR_QUALITY; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "This is nothing like the pictures online", "expected_output": "CATEGORY=COMPLAINT; DETAIL=MISLEADING_DESCRIPTION; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "Customer service was rude and unhelpful", "expected_output": "CATEGORY=COMPLAINT; DETAIL=SERVICE_ISSUE; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "Package arrived completely damaged", "expected_output": "CATEGORY=COMPLAINT; DETAIL=SHIPPING_DAMAGE; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "Can I change my shipping address? I haven't received it yet.", "expected_output": "CATEGORY=ORDER_MODIFICATION; DETAIL=ADDRESS_CHANGE; ORDER_ID=NONE; CHANGE=ADDRESS"}
+{"input": "Need to update delivery address for order #55443", "expected_output": "CATEGORY=ORDER_MODIFICATION; DETAIL=ADDRESS_CHANGE; ORDER_ID=55443; CHANGE=ADDRESS"}
+{"input": "Can I cancel my order? Just placed it 10 minutes ago", "expected_output": "CATEGORY=ORDER_MODIFICATION; DETAIL=ORDER_CANCELLATION; ORDER_ID=NONE; CHANGE=CANCEL"}
+{"input": "Want to add another item to my order #33221", "expected_output": "CATEGORY=ORDER_MODIFICATION; DETAIL=ADD_ITEMS; ORDER_ID=33221; CHANGE=ITEMS_ADD"}
+{"input": "Can I remove an item from my pending order?", "expected_output": "CATEGORY=ORDER_MODIFICATION; DETAIL=REMOVE_ITEMS; ORDER_ID=NONE; CHANGE=ITEMS_REMOVE"}
+{"input": "Thanks for the quick delivery! Everything looks great.", "expected_output": "CATEGORY=POSITIVE_FEEDBACK; DETAIL=POSITIVE_GENERAL; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "Excellent service, very happy!", "expected_output": "CATEGORY=POSITIVE_FEEDBACK; DETAIL=POSITIVE_GENERAL; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "Product exceeded my expectations", "expected_output": "CATEGORY=POSITIVE_FEEDBACK; DETAIL=POSITIVE_GENERAL; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "Fast shipping and great quality. Thank you!", "expected_output": "CATEGORY=POSITIVE_FEEDBACK; DETAIL=POSITIVE_GENERAL; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "Love this! Will definitely order again", "expected_output": "CATEGORY=POSITIVE_FEEDBACK; DETAIL=POSITIVE_GENERAL; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "I need a refund for order #98765. The item was damaged.", "expected_output": "CATEGORY=REFUND_REQUEST; DETAIL=REFUND_DAMAGED; ORDER_ID=98765; CHANGE=NONE"}
+{"input": "Requesting full refund for #55443", "expected_output": "CATEGORY=REFUND_REQUEST; DETAIL=REFUND_GENERAL; ORDER_ID=55443; CHANGE=NONE"}
+{"input": "Please refund my money. Order #33221 never arrived", "expected_output": "CATEGORY=REFUND_REQUEST; DETAIL=REFUND_NOT_RECEIVED; ORDER_ID=33221; CHANGE=NONE"}
+{"input": "Item is defective. Need refund for order #77665", "expected_output": "CATEGORY=REFUND_REQUEST; DETAIL=REFUND_DEFECTIVE; ORDER_ID=77665; CHANGE=NONE"}
+{"input": "Want my money back. This is broken", "expected_output": "CATEGORY=REFUND_REQUEST; DETAIL=REFUND_DEFECTIVE; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "What's your return policy?", "expected_output": "CATEGORY=POLICY_QUESTION; DETAIL=RETURN_POLICY; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "How long do I have to return items?", "expected_output": "CATEGORY=POLICY_QUESTION; DETAIL=RETURN_WINDOW; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "Do you offer price matching?", "expected_output": "CATEGORY=POLICY_QUESTION; DETAIL=PRICE_MATCHING; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "What's your warranty policy?", "expected_output": "CATEGORY=POLICY_QUESTION; DETAIL=WARRANTY_POLICY; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "Do you ship internationally?", "expected_output": "CATEGORY=POLICY_QUESTION; DETAIL=SHIPPING_POLICY; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "Is there a discount code I can use?", "expected_output": "CATEGORY=DISCOUNT_INQUIRY; DETAIL=PROMO_CODE_REQUEST; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "Do you have any current promotions?", "expected_output": "CATEGORY=DISCOUNT_INQUIRY; DETAIL=CURRENT_PROMOTIONS; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "Are there any coupons available?", "expected_output": "CATEGORY=DISCOUNT_INQUIRY; DETAIL=COUPON_AVAILABILITY; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "Do you offer student discounts?", "expected_output": "CATEGORY=DISCOUNT_INQUIRY; DETAIL=STUDENT_DISCOUNT; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "Any deals for first-time customers?", "expected_output": "CATEGORY=DISCOUNT_INQUIRY; DETAIL=NEW_CUSTOMER_DISCOUNT; ORDER_ID=NONE; CHANGE=NONE"}

@@ -1,15 +1,15 @@
-{"input": "I received the wrong size. Can I exchange order #55555?", "expected_output": "RETURN_REQUEST: Order #55555"}
-{"input": "My order still hasn't arrived and it's been a week.", "expected_output": "TRACKING_INQUIRY: Check order status"}
-{"input": "The product quality is terrible. I want my money back.", "expected_output": "REFUND_REQUEST: Product quality"}
-{"input": "What fabrics are used in this sweater?", "expected_output": "PRODUCT_INQUIRY: Material information"}
-{"input": "I see two pending charges on my card for one order", "expected_output": "BILLING_ISSUE: Duplicate charge"}
-{"input": "This broke the first time I used it!", "expected_output": "COMPLAINT: Product defect"}
-{"input": "Need to change my order to a different color before shipping", "expected_output": "ORDER_MODIFICATION: Color change"}
-{"input": "Amazing product! Exceeded all expectations", "expected_output": "POSITIVE_FEEDBACK: Satisfied customer"}
-{"input": "How many days do I have for returns?", "expected_output": "POLICY_QUESTION: Return window"}
-{"input": "Any promo codes for today?", "expected_output": "DISCOUNT_INQUIRY: Promo code request"}
-{"input": "Can I send this back? It's not what I thought it would be", "expected_output": "RETURN_REQUEST: Product mismatch"}
-{"input": "Order #99999 - has this been shipped?", "expected_output": "TRACKING_INQUIRY: Check order status"}
-{"input": "Please cancel my pending order immediately", "expected_output": "ORDER_MODIFICATION: Order cancellation"}
-{"input": "Are these available in size XL?", "expected_output": "PRODUCT_INQUIRY: Size availability"}
-{"input": "The description online doesn't match what I received", "expected_output": "COMPLAINT: Misleading description"}
+{"input": "I received the wrong size. Can I exchange order #55555?", "expected_output": "CATEGORY=RETURN_REQUEST; DETAIL=SIZE; ORDER_ID=55555; CHANGE=NONE"}
+{"input": "My order still hasn't arrived and it's been a week.", "expected_output": "CATEGORY=TRACKING_INQUIRY; DETAIL=ORDER_STATUS; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "The product quality is terrible. I want my money back.", "expected_output": "CATEGORY=REFUND_REQUEST; DETAIL=REFUND_QUALITY; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "What fabrics are used in this sweater?", "expected_output": "CATEGORY=PRODUCT_INQUIRY; DETAIL=MATERIAL; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "I see two pending charges on my card for one order", "expected_output": "CATEGORY=BILLING_ISSUE; DETAIL=DUPLICATE_CHARGE; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "This broke the first time I used it!", "expected_output": "CATEGORY=COMPLAINT; DETAIL=PRODUCT_DEFECT; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "Need to change my order to a different color before shipping", "expected_output": "CATEGORY=ORDER_MODIFICATION; DETAIL=COLOR; ORDER_ID=NONE; CHANGE=COLOR"}
+{"input": "Amazing product! Exceeded all expectations", "expected_output": "CATEGORY=POSITIVE_FEEDBACK; DETAIL=POSITIVE_GENERAL; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "How many days do I have for returns?", "expected_output": "CATEGORY=POLICY_QUESTION; DETAIL=RETURN_WINDOW; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "Any promo codes for today?", "expected_output": "CATEGORY=DISCOUNT_INQUIRY; DETAIL=PROMO_CODE_REQUEST; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "Can I send this back? It's not what I thought it would be", "expected_output": "CATEGORY=RETURN_REQUEST; DETAIL=PRODUCT_MISMATCH; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "Order #99999 - has this been shipped?", "expected_output": "CATEGORY=TRACKING_INQUIRY; DETAIL=ORDER_STATUS; ORDER_ID=99999; CHANGE=NONE"}
+{"input": "Please cancel my pending order immediately", "expected_output": "CATEGORY=ORDER_MODIFICATION; DETAIL=ORDER_CANCELLATION; ORDER_ID=NONE; CHANGE=CANCEL"}
+{"input": "Are these available in size XL?", "expected_output": "CATEGORY=PRODUCT_INQUIRY; DETAIL=SIZE; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "The description online doesn't match what I received", "expected_output": "CATEGORY=COMPLAINT; DETAIL=MISLEADING_DESCRIPTION; ORDER_ID=NONE; CHANGE=NONE"}

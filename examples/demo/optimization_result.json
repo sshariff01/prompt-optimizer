@@ -1,10 +1,10 @@
 {
   "status": "success",
-  "final_prompt": "Answer the following yes/no question. Respond with ONLY the word 'yes' or 'no' in lowercase. Do not include any punctuation, explanations, or additional text. If the question is ambiguous or cannot be definitively answered, choose the most reasonable interpretation based on common knowledge and scientific consensus.",
+  "final_prompt": "Answer the following yes/no question. Respond with exactly 'LABEL=YES' or 'LABEL=NO'. Do not include any punctuation, explanations, or additional text. If the question is ambiguous or cannot be definitively answered, choose the most reasonable interpretation based on common knowledge and scientific consensus.",
   "iterations": [
     {
       "iteration": 0,
-      "prompt": "Answer the following yes/no question. Respond with ONLY the word 'yes' or 'no' in lowercase. Do not include any punctuation, explanations, or additional text. If the question is ambiguous or cannot be definitively answered, choose the most reasonable interpretation based on common knowledge and scientific consensus.",
+      "prompt": "Answer the following yes/no question. Respond with exactly 'LABEL=YES' or 'LABEL=NO'. Do not include any punctuation, explanations, or additional text. If the question is ambiguous or cannot be definitively answered, choose the most reasonable interpretation based on common knowledge and scientific consensus.",
       "training_pass_rate": 1.0,
       "test_pass_rate": null,
       "feedback": null,
@@ -12,7 +12,7 @@
     },
     {
       "iteration": 1,
-      "prompt": "Answer the following yes/no question. Respond with ONLY the word 'yes' or 'no' in lowercase. Do not include any punctuation, explanations, or additional text. If the question is ambiguous or cannot be definitively answered, choose the most reasonable interpretation based on common knowledge and scientific consensus.",
+      "prompt": "Answer the following yes/no question. Respond with exactly 'LABEL=YES' or 'LABEL=NO'. Do not include any punctuation, explanations, or additional text. If the question is ambiguous or cannot be definitively answered, choose the most reasonable interpretation based on common knowledge and scientific consensus.",
       "training_pass_rate": 1.0,
       "test_pass_rate": 1.0,
       "feedback": null,

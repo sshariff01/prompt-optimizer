@@ -200,35 +200,42 @@ See `config.toml` for a complete example with all available options.
 
 ## Data Format
 
-Training and test data should be in JSONL format (one JSON object per line):
+Training and test data should be in JSONL format (one JSON object per line). For strict
+labeling tasks, use a structured output format and define a schema in the config:
 
 ```jsonl
-{"input": "Example input text", "expected_output": "expected result"}
-{"input": "Another input", "expected_output": "another result"}
+{"input": "Example input text", "expected_output": "LABEL=POSITIVE"}
+{"input": "Another input", "expected_output": "LABEL=NEGATIVE"}
+```
+
+```toml
+[schema]
+fields = ["LABEL"]
+enums = { LABEL = ["POSITIVE", "NEGATIVE"] }
 ```
 
 ## Example Demonstration
 
 Here's a real optimization run on a yes/no question answering task:
 
-**Task:** Answer yes/no questions with only 'yes' or 'no' in lowercase
+**Task:** Answer yes/no questions with output `LABEL=YES` or `LABEL=NO`
 
 **Training Data** (7 examples):
 ```jsonl
-{"input": "Is the sky blue?", "expected_output": "yes"}
-{"input": "Can fish fly?", "expected_output": "no"}
-{"input": "Do humans need water?", "expected_output": "yes"}
-{"input": "Is Mars closer to the Sun than Earth?", "expected_output": "no"}
-{"input": "Does 2 + 2 equal 4?", "expected_output": "yes"}
-{"input": "Are all mammals warm-blooded?", "expected_output": "yes"}
-{"input": "Can plants photosynthesize without light?", "expected_output": "no"}
+{"input": "Is the sky blue?", "expected_output": "LABEL=YES"}
+{"input": "Can fish fly?", "expected_output": "LABEL=NO"}
+{"input": "Do humans need water?", "expected_output": "LABEL=YES"}
+{"input": "Is Mars closer to the Sun than Earth?", "expected_output": "LABEL=NO"}
+{"input": "Does 2 + 2 equal 4?", "expected_output": "LABEL=YES"}
+{"input": "Are all mammals warm-blooded?", "expected_output": "LABEL=YES"}
+{"input": "Can plants photosynthesize without light?", "expected_output": "LABEL=NO"}
 ```
 
 **Validation Data** (3 examples):
 ```jsonl
-{"input": "Are trees alive?", "expected_output": "yes"}
-{"input": "Can rocks think?", "expected_output": "no"}
-{"input": "Is ice frozen water?", "expected_output": "yes"}
+{"input": "Are trees alive?", "expected_output": "LABEL=YES"}
+{"input": "Can rocks think?", "expected_output": "LABEL=NO"}
+{"input": "Is ice frozen water?", "expected_output": "LABEL=YES"}
 ```
 
 ### Run Output:
@@ -257,7 +264,7 @@ Optimizer: claude-opus-4-20250514
 
 Iteration 0: Generating initial prompt...
 Initial prompt:
-Answer the following yes/no question. Respond with ONLY the word 'yes' or
+Answer the following yes/no question. Respond with exactly 'LABEL=YES' or
 'no' in lowercase. Do not include any punctuation, explanations, or additional
 text. If the question is ambiguous or cannot be definitively answered, choose
 the most reasonable interpretation based on common knowledge and scientific
@@ -296,8 +303,8 @@ Metrics:
 
 Final Optimized Prompt:
 ╭──────────────────────────────────────────────────────────────────╮
-│ Answer the following yes/no question. Respond with ONLY the word │
-│ 'yes' or 'no' in lowercase. Do not include any punctuation,      │
+│ Answer the following yes/no question. Respond with exactly       │
+│ 'LABEL=YES' or 'LABEL=NO'. Do not include any punctuation,       │
 │ explanations, or additional text. If the question is ambiguous   │
 │ or cannot be definitively answered, choose the most reasonable   │
 │ interpretation based on common knowledge and scientific consensus.│
@@ -320,23 +327,23 @@ This demonstrates the system's ability to quickly generate effective zero-shot p
 
 ### Example 2: Customer Service Request Classification (Complex Task)
 
-**Task:** Categorize customer service messages into request types with key details
+**Task:** Categorize customer service messages into request types with strict labels
 
 **Training Data** (10 examples):
 ```jsonl
-{"input": "I want to return my order #12345 because it doesn't fit", "expected_output": "RETURN_REQUEST: Order #12345"}
-{"input": "Where is my package? I ordered it 5 days ago.", "expected_output": "TRACKING_INQUIRY: Check order status"}
-{"input": "Do you have this shirt in blue?", "expected_output": "PRODUCT_INQUIRY: Color availability"}
-{"input": "I was charged twice for the same order!", "expected_output": "BILLING_ISSUE: Duplicate charge"}
-{"input": "Your product broke after 2 days. This is unacceptable!", "expected_output": "COMPLAINT: Product defect"}
+{"input": "I want to return my order #12345 because it doesn't fit", "expected_output": "CATEGORY=RETURN_REQUEST; DETAIL=SIZE; ORDER_ID=12345; CHANGE=NONE"}
+{"input": "Where is my package? I ordered it 5 days ago.", "expected_output": "CATEGORY=TRACKING_INQUIRY; DETAIL=ORDER_STATUS; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "Do you have this shirt in blue?", "expected_output": "CATEGORY=PRODUCT_INQUIRY; DETAIL=COLOR; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "I was charged twice for the same order!", "expected_output": "CATEGORY=BILLING_ISSUE; DETAIL=DUPLICATE_CHARGE; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "Your product broke after 2 days. This is unacceptable!", "expected_output": "CATEGORY=COMPLAINT; DETAIL=PRODUCT_DEFECT; ORDER_ID=NONE; CHANGE=NONE"}
 ... (5 more examples)
 ```
 
 **Validation Data** (5 examples):
 ```jsonl
-{"input": "I received the wrong size. Can I exchange order #55555?", "expected_output": "RETURN_REQUEST: Order #55555"}
-{"input": "My order still hasn't arrived and it's been a week.", "expected_output": "TRACKING_INQUIRY: Check order status"}
-{"input": "The product quality is terrible. I want my money back.", "expected_output": "COMPLAINT: Product defect"}
+{"input": "I received the wrong size. Can I exchange order #55555?", "expected_output": "CATEGORY=RETURN_REQUEST; DETAIL=SIZE; ORDER_ID=55555; CHANGE=NONE"}
+{"input": "My order still hasn't arrived and it's been a week.", "expected_output": "CATEGORY=TRACKING_INQUIRY; DETAIL=ORDER_STATUS; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "The product quality is terrible. I want my money back.", "expected_output": "CATEGORY=REFUND_REQUEST; DETAIL=REFUND_QUALITY; ORDER_ID=NONE; CHANGE=NONE"}
 ... (2 more examples)
 ```
 

@@ -1,10 +1,10 @@
-{"input": "Fantastic product! Will buy again.", "expected_output": "positive"}
-{"input": "Really impressed with the quality.", "expected_output": "positive"}
-{"input": "Horrible experience. Would not recommend.", "expected_output": "negative"}
-{"input": "Stopped functioning within days.", "expected_output": "negative"}
-{"input": "It's fine. Nothing remarkable.", "expected_output": "neutral"}
-{"input": "Decent product for the money.", "expected_output": "neutral"}
-{"input": "Nice features but battery life is poor.", "expected_output": "neutral"}
-{"input": "Great price but questionable durability.", "expected_output": "neutral"}
-{"input": "Perfect! It broke immediately.", "expected_output": "negative"}
-{"input": "Exactly what I wanted... if I wanted garbage.", "expected_output": "negative"}
+{"input": "Fantastic product! Will buy again.", "expected_output": "LABEL=POSITIVE"}
+{"input": "Really impressed with the quality.", "expected_output": "LABEL=POSITIVE"}
+{"input": "Horrible experience. Would not recommend.", "expected_output": "LABEL=NEGATIVE"}
+{"input": "Stopped functioning within days.", "expected_output": "LABEL=NEGATIVE"}
+{"input": "It's fine. Nothing remarkable.", "expected_output": "LABEL=NEUTRAL"}
+{"input": "Decent product for the money.", "expected_output": "LABEL=NEUTRAL"}
+{"input": "Nice features but battery life is poor.", "expected_output": "LABEL=NEUTRAL"}
+{"input": "Great price but questionable durability.", "expected_output": "LABEL=NEUTRAL"}
+{"input": "Perfect! It broke immediately.", "expected_output": "LABEL=NEGATIVE"}
+{"input": "Exactly what I wanted... if I wanted garbage.", "expected_output": "LABEL=NEGATIVE"}

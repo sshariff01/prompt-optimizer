@@ -1,5 +1,6 @@
 task_description = """
-Answer yes/no questions. Output ONLY 'yes' or 'no' in lowercase with no punctuation or explanations.
+Answer yes/no questions. Output exactly:
+LABEL=YES or LABEL=NO
 """
 
 [target_model]
@@ -18,6 +19,10 @@ plateau_threshold = 3
 [data]
 training_set = "./examples/demo/train.jsonl"
 test_set = "./examples/demo/test.jsonl"
+
+[schema]
+fields = ["LABEL"]
+enums = { LABEL = ["YES", "NO"] }
 
 [feedback]
 training_detail_level = "full"

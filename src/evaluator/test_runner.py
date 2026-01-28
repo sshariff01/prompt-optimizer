@@ -1,11 +1,12 @@
 """Test runner for evaluating prompts against eval cases."""
 
+import re
 import sys
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from src.optimizer.models import EvalCase, EvalResult
+from src.optimizer.models import EvalCase, EvalResult, SchemaConfig
 from src.providers.base import LLMProvider
 
 
@@ -49,67 +50,22 @@ class Spinner:
 class TestRunner:
     """Executes prompts against evaluation cases."""
 
-    _ALLOWED_CATEGORIES = {
-        "RETURN_REQUEST",
-        "TRACKING_INQUIRY",
-        "PRODUCT_INQUIRY",
-        "BILLING_ISSUE",
-        "COMPLAINT",
-        "ORDER_MODIFICATION",
-        "POSITIVE_FEEDBACK",
-        "REFUND_REQUEST",
-        "POLICY_QUESTION",
-        "DISCOUNT_INQUIRY",
-    }
-    _ALLOWED_DETAILS = {
-        "ORDER_STATUS",
-        "SIZE",
-        "COLOR",
-        "MATERIAL",
-        "FEATURES",
-        "DUPLICATE_CHARGE",
-        "UNAUTHORIZED_CHARGE",
-        "PRICE_DISCREPANCY",
-        "INCORRECT_AMOUNT",
-        "PRODUCT_DEFECT",
-        "POOR_QUALITY",
-        "MISLEADING_DESCRIPTION",
-        "SERVICE_ISSUE",
-        "SHIPPING_DAMAGE",
-        "ORDER_CANCELLATION",
-        "ADD_ITEMS",
-        "REMOVE_ITEMS",
-        "ADDRESS_CHANGE",
-        "REFUND_DAMAGED",
-        "REFUND_DEFECTIVE",
-        "REFUND_NOT_RECEIVED",
-        "REFUND_QUALITY",
-        "REFUND_GENERAL",
-        "RETURN_POLICY",
-        "RETURN_WINDOW",
-        "WARRANTY_POLICY",
-        "SHIPPING_POLICY",
-        "PRICE_MATCHING",
-        "PROMO_CODE_REQUEST",
-        "CURRENT_PROMOTIONS",
-        "COUPON_AVAILABILITY",
-        "STUDENT_DISCOUNT",
-        "NEW_CUSTOMER_DISCOUNT",
-        "POSITIVE_GENERAL",
-        "PRODUCT_MISMATCH",
-        "RETURN_GENERAL",
-    }
-    _ALLOWED_CHANGES = {"ADDRESS", "COLOR", "ITEMS_ADD", "ITEMS_REMOVE", "CANCEL", "NONE"}
-
-    def __init__(self, target_provider: LLMProvider, max_workers: int = 10):
+    def __init__(
+        self,
+        target_provider: LLMProvider,
+        max_workers: int = 10,
+        schema: SchemaConfig | None = None,
+    ):
         """Initialize the test runner.
 
         Args:
             target_provider: LLM provider to test prompts with (e.g., Sonnet)
             max_workers: Maximum number of parallel API calls (default: 10)
+            schema: Optional strict output schema for evaluation
         """
         self.target_provider = target_provider
         self.max_workers = max_workers
+        self._schema = self._normalize_schema(schema) if schema else None
         self._cache = {}  # Cache for (prompt, input, system) -> output
         self._cache_lock = threading.Lock()  # Thread-safe cache access
         self.cache_hits = 0
@@ -260,18 +216,42 @@ class TestRunner:
         Returns:
             True if they match (after normalization)
         """
-        actual_parsed = self._parse_labeled_output(actual)
-        expected_parsed = self._parse_labeled_output(expected)
+        if not self._schema:
+            actual_normalized = actual.strip().lower()
+            expected_normalized = expected.strip().lower()
+            return actual_normalized == expected_normalized
+
+        actual_parsed = self._parse_labeled_output(actual, self._schema)
+        expected_parsed = self._parse_labeled_output(expected, self._schema)
         if not actual_parsed or not expected_parsed:
             return False
         return actual_parsed == expected_parsed
 
-    def _parse_labeled_output(self, output: str) -> dict[str, str] | None:
+    def _normalize_schema(self, schema: SchemaConfig) -> dict[str, object]:
+        fields = [field.strip().upper() for field in schema.fields]
+        enums = {
+            key.strip().upper(): [value.strip().upper() for value in values]
+            for key, values in schema.enums.items()
+        }
+        patterns = {
+            key.strip().upper(): re.compile(pattern, re.IGNORECASE)
+            for key, pattern in schema.patterns.items()
+        }
+        return {"fields": fields, "enums": enums, "patterns": patterns}
+
+    def _parse_labeled_output(
+        self, output: str, schema: dict[str, object]
+    ) -> dict[str, str] | None:
         parts = [part.strip() for part in output.split(";") if part.strip()]
-        if len(parts) != 4:
+        fields: list[str] = schema["fields"]  # type: ignore[assignment]
+        enums: dict[str, list[str]] = schema["enums"]  # type: ignore[assignment]
+        patterns: dict[str, re.Pattern] = schema["patterns"]  # type: ignore[assignment]
+
+        if len(parts) != len(fields):
             return None
 
         parsed: dict[str, str] = {}
+        parsed_order: list[str] = []
         for part in parts:
             if "=" not in part:
                 return None
@@ -281,21 +261,25 @@ class TestRunner:
             if not key or not value or key in parsed:
                 return None
             parsed[key] = value
+            parsed_order.append(key)
 
-        if set(parsed.keys()) != {"CATEGORY", "DETAIL", "ORDER_ID", "CHANGE"}:
+        if parsed_order != fields:
             return None
-        if parsed["CATEGORY"] not in self._ALLOWED_CATEGORIES:
-            return None
-        if parsed["DETAIL"] not in self._ALLOWED_DETAILS:
-            return None
-        if parsed["CHANGE"] not in self._ALLOWED_CHANGES:
+        if set(parsed.keys()) != set(fields):
             return None
 
-        order_id = parsed["ORDER_ID"]
-        if order_id != "NONE" and not order_id.isdigit():
-            return None
-        if parsed["CATEGORY"] != "ORDER_MODIFICATION" and parsed["CHANGE"] != "NONE":
-            return None
+        for field in fields:
+            value = parsed[field]
+            pattern = patterns.get(field)
+            allowed = enums.get(field)
+            if pattern:
+                if not pattern.fullmatch(value):
+                    return None
+            elif allowed:
+                if value not in allowed:
+                    return None
+            else:
+                return None
 
         return parsed
 

@@ -305,9 +305,9 @@ on_incomplete_convergence = "return_best"
 ### train.jsonl / test.jsonl
 
 ```jsonl
-{"input": "This product is amazing!", "expected_output": "positive"}
-{"input": "Broke after one day", "expected_output": "negative"}
-{"input": "It's okay, nothing special", "expected_output": "neutral"}
+{"input": "This product is amazing!", "expected_output": "LABEL=POSITIVE"}
+{"input": "Broke after one day", "expected_output": "LABEL=NEGATIVE"}
+{"input": "It's okay, nothing special", "expected_output": "LABEL=NEUTRAL"}
 ```
 
 ---

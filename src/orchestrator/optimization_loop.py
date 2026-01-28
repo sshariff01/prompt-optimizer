@@ -36,7 +36,11 @@ class OptimizationLoop:
         """
         self.config = config
         self.meta_optimizer = MetaOptimizer(optimizer_provider)
-        self.test_runner = TestRunner(target_provider, max_workers=config.optimizer.max_workers)
+        self.test_runner = TestRunner(
+            target_provider,
+            max_workers=config.optimizer.max_workers,
+            schema=config.schema,
+        )
         self.feedback_analyzer = FeedbackAnalyzer()
         self.iteration_history: list[IterationResult] = []
         self.prompt_history = PromptHistory()

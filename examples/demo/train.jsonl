@@ -1,7 +1,7 @@
-{"input": "Is the sky blue?", "expected_output": "yes"}
-{"input": "Can fish fly?", "expected_output": "no"}
-{"input": "Do humans need water?", "expected_output": "yes"}
-{"input": "Is Mars closer to the Sun than Earth?", "expected_output": "no"}
-{"input": "Does 2 + 2 equal 4?", "expected_output": "yes"}
-{"input": "Are all mammals warm-blooded?", "expected_output": "yes"}
-{"input": "Can plants photosynthesize without light?", "expected_output": "no"}
+{"input": "Is the sky blue?", "expected_output": "LABEL=YES"}
+{"input": "Can fish fly?", "expected_output": "LABEL=NO"}
+{"input": "Do humans need water?", "expected_output": "LABEL=YES"}
+{"input": "Is Mars closer to the Sun than Earth?", "expected_output": "LABEL=NO"}
+{"input": "Does 2 + 2 equal 4?", "expected_output": "LABEL=YES"}
+{"input": "Are all mammals warm-blooded?", "expected_output": "LABEL=YES"}
+{"input": "Can plants photosynthesize without light?", "expected_output": "LABEL=NO"}

@@ -5,7 +5,8 @@
 # maintain a separate held-out test set.
 
 task_description = """
-Classify sentiment of product reviews as positive, negative, or neutral.
+Classify sentiment of product reviews. Output exactly:
+LABEL=POSITIVE, LABEL=NEGATIVE, or LABEL=NEUTRAL
 """
 
 [target_model]
@@ -24,6 +25,10 @@ plateau_threshold = 7
 [data]
 training_set = "./examples/sentiment_analysis/train.jsonl"
 test_set = "./examples/sentiment_analysis/test.jsonl"
+
+[schema]
+fields = ["LABEL"]
+enums = { LABEL = ["POSITIVE", "NEGATIVE", "NEUTRAL"] }
 
 [feedback]
 training_detail_level = "full"

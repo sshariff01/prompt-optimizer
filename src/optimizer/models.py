@@ -49,6 +49,22 @@ class DataConfig(BaseModel):
     test_set: Path = Field(..., description="Path to test set JSONL file")
 
 
+class SchemaConfig(BaseModel):
+    """Configuration for strict output label schemas."""
+
+    fields: list[str] = Field(
+        ..., description="Ordered list of required output fields (e.g., ['LABEL'])"
+    )
+    enums: dict[str, list[str]] = Field(
+        default_factory=dict,
+        description="Allowed enum values per field (case-insensitive)",
+    )
+    patterns: dict[str, str] = Field(
+        default_factory=dict,
+        description="Regex patterns per field (case-insensitive match)",
+    )
+
+
 class FeedbackDetailLevel(str, Enum):
     """Level of detail in feedback."""
 
@@ -88,6 +104,9 @@ class OptimizationConfig(BaseSettings):
     target_model: TargetModelConfig
     optimizer: OptimizerConfig = Field(default_factory=OptimizerConfig)
     data: DataConfig
+    schema: SchemaConfig | None = Field(
+        default=None, description="Optional strict output schema for evaluation"
+    )
     feedback: FeedbackConfig = Field(default_factory=FeedbackConfig)
     stopping_criteria: StoppingCriteriaConfig = Field(default_factory=StoppingCriteriaConfig)
 

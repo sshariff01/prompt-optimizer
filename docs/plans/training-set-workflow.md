@@ -274,8 +274,8 @@ data:
   test_set: ./data/sentiment_test.jsonl
 
 # Training set format (sentiment_train.jsonl):
-# {"input": "This product is amazing!", "expected_output": "positive"}
-# {"input": "Broke after one day", "expected_output": "negative"}
+# {"input": "This product is amazing!", "expected_output": "LABEL=POSITIVE"}
+# {"input": "Broke after one day", "expected_output": "LABEL=NEGATIVE"}
 # ...
 
 stopping_criteria:

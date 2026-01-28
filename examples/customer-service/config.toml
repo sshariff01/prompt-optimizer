@@ -44,6 +44,59 @@ max_workers = 50  # Number of parallel API calls for evaluation (increased for s
 training_set = "./examples/customer-service/train.jsonl"
 test_set = "./examples/customer-service/test.jsonl"
 
+[schema]
+fields = ["CATEGORY", "DETAIL", "ORDER_ID", "CHANGE"]
+enums = { CATEGORY = [
+    "RETURN_REQUEST",
+    "TRACKING_INQUIRY",
+    "PRODUCT_INQUIRY",
+    "BILLING_ISSUE",
+    "COMPLAINT",
+    "ORDER_MODIFICATION",
+    "POSITIVE_FEEDBACK",
+    "REFUND_REQUEST",
+    "POLICY_QUESTION",
+    "DISCOUNT_INQUIRY",
+  ], DETAIL = [
+    "ORDER_STATUS",
+    "SIZE",
+    "COLOR",
+    "MATERIAL",
+    "FEATURES",
+    "DUPLICATE_CHARGE",
+    "UNAUTHORIZED_CHARGE",
+    "PRICE_DISCREPANCY",
+    "INCORRECT_AMOUNT",
+    "PRODUCT_DEFECT",
+    "POOR_QUALITY",
+    "MISLEADING_DESCRIPTION",
+    "SERVICE_ISSUE",
+    "SHIPPING_DAMAGE",
+    "ORDER_CANCELLATION",
+    "ADD_ITEMS",
+    "REMOVE_ITEMS",
+    "ADDRESS_CHANGE",
+    "REFUND_DAMAGED",
+    "REFUND_DEFECTIVE",
+    "REFUND_NOT_RECEIVED",
+    "REFUND_QUALITY",
+    "REFUND_GENERAL",
+    "RETURN_POLICY",
+    "RETURN_WINDOW",
+    "WARRANTY_POLICY",
+    "SHIPPING_POLICY",
+    "PRICE_MATCHING",
+    "PROMO_CODE_REQUEST",
+    "CURRENT_PROMOTIONS",
+    "COUPON_AVAILABILITY",
+    "STUDENT_DISCOUNT",
+    "NEW_CUSTOMER_DISCOUNT",
+    "POSITIVE_GENERAL",
+    "PRODUCT_MISMATCH",
+    "RETURN_GENERAL",
+  ], CHANGE = ["ADDRESS", "COLOR", "ITEMS_ADD", "ITEMS_REMOVE", "CANCEL", "NONE"] }
+patterns = { ORDER_ID = "^(?:\\d+|NONE)$" }
+
 [feedback]
 training_detail_level = "full"
 test_detail_level = "descriptive"

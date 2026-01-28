@@ -29,7 +29,6 @@
 {"input": "Want to add another item to my order #33221", "expected_output": "CATEGORY=ORDER_MODIFICATION; DETAIL=ADD_ITEMS; ORDER_ID=33221; CHANGE=ITEMS_ADD"}
 {"input": "Can I remove an item from my pending order?", "expected_output": "CATEGORY=ORDER_MODIFICATION; DETAIL=REMOVE_ITEMS; ORDER_ID=NONE; CHANGE=ITEMS_REMOVE"}
 {"input": "Thanks for the quick delivery! Everything looks great.", "expected_output": "CATEGORY=POSITIVE_FEEDBACK; DETAIL=POSITIVE_GENERAL; ORDER_ID=NONE; CHANGE=NONE"}
-{"input": "Excellent service, very happy!", "expected_output": "CATEGORY=POSITIVE_FEEDBACK; DETAIL=POSITIVE_GENERAL; ORDER_ID=NONE; CHANGE=NONE"}
 {"input": "Product exceeded my expectations", "expected_output": "CATEGORY=POSITIVE_FEEDBACK; DETAIL=POSITIVE_GENERAL; ORDER_ID=NONE; CHANGE=NONE"}
 {"input": "Fast shipping and great quality. Thank you!", "expected_output": "CATEGORY=POSITIVE_FEEDBACK; DETAIL=POSITIVE_GENERAL; ORDER_ID=NONE; CHANGE=NONE"}
 {"input": "Love this! Will definitely order again", "expected_output": "CATEGORY=POSITIVE_FEEDBACK; DETAIL=POSITIVE_GENERAL; ORDER_ID=NONE; CHANGE=NONE"}
@@ -48,3 +47,4 @@
 {"input": "Are there any coupons available?", "expected_output": "CATEGORY=DISCOUNT_INQUIRY; DETAIL=COUPON_AVAILABILITY; ORDER_ID=NONE; CHANGE=NONE"}
 {"input": "Do you offer student discounts?", "expected_output": "CATEGORY=DISCOUNT_INQUIRY; DETAIL=STUDENT_DISCOUNT; ORDER_ID=NONE; CHANGE=NONE"}
 {"input": "Any deals for first-time customers?", "expected_output": "CATEGORY=DISCOUNT_INQUIRY; DETAIL=NEW_CUSTOMER_DISCOUNT; ORDER_ID=NONE; CHANGE=NONE"}
+{"input": "This uses cheap materials. I want a refund.", "expected_output": "CATEGORY=REFUND_REQUEST; DETAIL=REFUND_QUALITY; ORDER_ID=NONE; CHANGE=NONE"}

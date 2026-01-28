@@ -380,6 +380,13 @@ class OptimizationLoop:
                 print(f"\033[94mIteration {iteration}: Refining with training constraints...\033[0m")
                 print(f"  Test pass rate: {current_test_passed}/{current_test_total} ({current_test_pass_rate:.1%})")
                 print(f"  Training constraints: {len(training_failures)} cases to preserve")
+                if test_feedback.error_patterns:
+                    print(f"  Error patterns: {len(test_feedback.error_patterns)}")
+                    for pattern in test_feedback.error_patterns:
+                        print(f"   - {pattern.error_type.value}: {pattern.pattern_observed}")
+                        print(f"     Example: {pattern.example_pattern}")
+                        print(f"     Root cause: {pattern.root_cause}")
+                        print(f"     Fix: {pattern.recommended_fix}")
 
                 # Reset training regression tracking after using it
                 previous_training_regression = None
@@ -390,6 +397,11 @@ class OptimizationLoop:
                 print(f"\033[94mIteration {iteration}: Refining based on test patterns...\033[0m")
                 print(f"  Test pass rate: {current_test_passed}/{current_test_total} ({current_test_pass_rate:.1%})")
                 print(f"  Error patterns: {len(feedback.error_patterns)}")
+                for pattern in feedback.error_patterns:
+                    print(f"   - {pattern.error_type.value}: {pattern.pattern_observed}")
+                    print(f"     Example: {pattern.example_pattern}")
+                    print(f"     Root cause: {pattern.root_cause}")
+                    print(f"     Fix: {pattern.recommended_fix}")
 
             # Save current state before refinement
             previous_results = results

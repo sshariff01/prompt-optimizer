@@ -107,8 +107,13 @@ class FeedbackAnalyzer:
         common_actual = self._find_common_patterns(actual_outputs)
 
         # Generate more specific pattern descriptions
-        pattern_observed = self._describe_pattern_observed(category, cases, expected_outputs, actual_outputs)
-        example_pattern = self._describe_example_pattern(category, common_expected, common_actual)
+        label_summary = self._summarize_label_confusions(expected_outputs, actual_outputs)
+        pattern_observed = self._describe_pattern_observed(
+            category, cases, expected_outputs, actual_outputs, label_summary
+        )
+        example_pattern = self._describe_example_pattern(
+            category, common_expected, common_actual, label_summary
+        )
         root_cause = self._describe_root_cause(category, cases)
         recommended_fix = self._describe_recommended_fix(category, common_expected, common_actual, cases)
 
@@ -149,8 +154,12 @@ class FeedbackAnalyzer:
         }
 
     def _describe_pattern_observed(
-        self, category: ErrorCategory, cases: list[EvalResult],
-        expected: list[str], actual: list[str]
+        self,
+        category: ErrorCategory,
+        cases: list[EvalResult],
+        expected: list[str],
+        actual: list[str],
+        label_summary: dict | None = None,
     ) -> str:
         """Describe what pattern was observed in the failures."""
 
@@ -188,15 +197,24 @@ class FeedbackAnalyzer:
             )
 
         elif category == ErrorCategory.LOGIC_ERROR:
-            return (
+            base = (
                 f"Fundamental reasoning errors in {len(cases)} cases. "
                 f"Model interpretation differs from intended task semantics."
             )
+            if label_summary:
+                return f"{base} {self._format_label_confusion(label_summary)}"
+            return base
 
         else:
             return f"Unspecified error pattern affecting {len(cases)} cases"
 
-    def _describe_example_pattern(self, category: ErrorCategory, common_expected: dict, common_actual: dict) -> str:
+    def _describe_example_pattern(
+        self,
+        category: ErrorCategory,
+        common_expected: dict,
+        common_actual: dict,
+        label_summary: dict | None = None,
+    ) -> str:
         """Describe an example of the error pattern."""
 
         if category == ErrorCategory.FORMAT_VIOLATION:
@@ -221,16 +239,94 @@ class FeedbackAnalyzer:
         elif category == ErrorCategory.BOUNDARY_CONFUSION:
             expected_words = common_expected.get('common_words', [])
             actual_words = common_actual.get('common_words', [])
+            if label_summary:
+                return self._format_label_confusion(label_summary)
             return (
                 f"Cases requiring distinction between categories like '{', '.join(expected_words[:2])}' "
                 f"are being classified as '{', '.join(actual_words[:2])}' instead."
             )
 
         elif category == ErrorCategory.LOGIC_ERROR:
+            if label_summary:
+                return self._format_label_confusion(label_summary)
             return "Model's reasoning about input semantics differs from intended interpretation."
 
         else:
             return "Error type doesn't fit standard categories"
+
+    def _parse_labeled_output(self, output: str) -> dict[str, str] | None:
+        parts = [part.strip() for part in output.split(";") if part.strip()]
+        parsed: dict[str, str] = {}
+        for part in parts:
+            if "=" not in part:
+                return None
+            key, value = part.split("=", 1)
+            key = key.strip().upper()
+            value = value.strip().upper()
+            if not key or not value:
+                return None
+            parsed[key] = value
+        return parsed if parsed else None
+
+    def _summarize_label_confusions(self, expected: list[str], actual: list[str]) -> dict | None:
+        from collections import Counter
+
+        expected_labels = []
+        actual_labels = []
+        for exp, act in zip(expected, actual):
+            exp_parsed = self._parse_labeled_output(exp)
+            act_parsed = self._parse_labeled_output(act)
+            if not exp_parsed or not act_parsed:
+                continue
+            expected_labels.append(exp_parsed)
+            actual_labels.append(act_parsed)
+
+        if not expected_labels:
+            return None
+
+        def most_common(counter: Counter):
+            return counter.most_common(1)[0][0] if counter else None
+
+        exp_cat = Counter([e.get("CATEGORY") for e in expected_labels if e.get("CATEGORY")])
+        act_cat = Counter([a.get("CATEGORY") for a in actual_labels if a.get("CATEGORY")])
+        exp_det = Counter([e.get("DETAIL") for e in expected_labels if e.get("DETAIL")])
+        act_det = Counter([a.get("DETAIL") for a in actual_labels if a.get("DETAIL")])
+
+        exp_pair = Counter(
+            [(e.get("CATEGORY"), e.get("DETAIL")) for e in expected_labels if e.get("CATEGORY")]
+        )
+        act_pair = Counter(
+            [(a.get("CATEGORY"), a.get("DETAIL")) for a in actual_labels if a.get("CATEGORY")]
+        )
+
+        return {
+            "expected_category": most_common(exp_cat),
+            "actual_category": most_common(act_cat),
+            "expected_detail": most_common(exp_det),
+            "actual_detail": most_common(act_det),
+            "expected_pair": most_common(exp_pair),
+            "actual_pair": most_common(act_pair),
+        }
+
+    def _format_label_confusion(self, summary: dict) -> str:
+        exp_pair = summary.get("expected_pair")
+        act_pair = summary.get("actual_pair")
+        exp_cat = summary.get("expected_category")
+        act_cat = summary.get("actual_category")
+        exp_det = summary.get("expected_detail")
+        act_det = summary.get("actual_detail")
+
+        parts = []
+        if exp_pair and act_pair:
+            parts.append(
+                f"Most common expected CATEGORY/DETAIL: {exp_pair[0]}/{exp_pair[1]}, "
+                f"actual: {act_pair[0]}/{act_pair[1]}."
+            )
+        elif exp_cat and act_cat:
+            parts.append(f"Most common expected CATEGORY: {exp_cat}, actual: {act_cat}.")
+        if exp_det and act_det and exp_det != act_det:
+            parts.append(f"Most common expected DETAIL: {exp_det}, actual: {act_det}.")
+        return " ".join(parts).strip()
 
     def _describe_root_cause(self, category: ErrorCategory, cases: list[EvalResult]) -> str:
         """Describe the likely root cause of the error."""
